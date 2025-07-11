@@ -5,7 +5,7 @@ import base64
 import io
 import os
 
-# 🎨 ВСТРОЕННЫЙ ФОН КАК base64 PNG
+# 🎨 ВСТРОЕННЫЙ ФОН
 st.markdown("""
 <style>
 .stApp {
@@ -21,7 +21,6 @@ st.markdown("""
 # 🧱 НАСТРОЙКИ
 st.set_page_config(page_title="PNG → WebP или HTML5", layout="centered")
 
-# 🏷 ЗАГОЛОВОК
 st.title("🖼 PNG → WebP или HTML5 (для медийной рекламы)")
 
 st.markdown("""
@@ -92,7 +91,7 @@ if uploaded_files:
     with open(zip_filename, "rb") as f:
         st.download_button("⬇️ Скачать архив", f, file_name=zip_filename, mime="application/zip")
 
-    # 🧹 УДАЛЕНИЕ ВРЕМЕННЫХ ФАЙЛОВ
+    # 🧹 ОЧИСТКА
     for f in os.listdir(output_dir):
         os.remove(os.path.join(output_dir, f))
     os.rmdir(output_dir)
