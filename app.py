@@ -1,39 +1,40 @@
-# Установка Pillow
-!pip install -q pillow
-
+import streamlit as st
 from PIL import Image
-import os
 import zipfile
-from google.colab import files
+import os
 
-# Создаём папку для webp
-output_folder = "webp_output"
-os.makedirs(output_folder, exist_ok=True)
+# Заголовок страницы
+st.title("🖼 PNG → WebP без потерь")
 
-# Поиск PNG-файлов
-png_files = [f for f in os.listdir() if f.lower().endswith(".png")]
+# Инструкция
+st.markdown("""
+Загрузите один или несколько PNG-файлов — они будут автоматически конвертированы в формат WebP без потери качества.  
+Готовый архив с .webp можно будет скачать в один клик.  
+""")
 
-if not png_files:
-    print("❌ PNG-файлы не найдены. Перетащи их в левую панель 'Файлы' и перезапусти ячейку.")
-else:
-    # Конвертация с максимальным качеством (lossless)
-    for filename in png_files:
-        try:
-            img = Image.open(filename).convert("RGBA")
-            webp_path = os.path.join(output_folder, filename.replace(".png", ".webp"))
-            img.save(webp_path, "webp", lossless=True)  # <--- БЕЗ потерь
-            print(f"✅ {filename} → {webp_path}")
-        except Exception as e:
-            print(f"⚠️ Ошибка при обработке {filename}: {e}")
+# Загрузка файлов
+uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
 
-    # Упаковываем все webp в zip
-    zip_filename = "converted_webp_lossless.zip"
-    with zipfile.ZipFile(zip_filename, "w") as zipf:
-        for f in os.listdir(output_folder):
-            zipf.write(os.path.join(output_folder, f), arcname=f)
+if uploaded_files:
+    # Создаём папку для временных файлов
+    output_dir = "output"
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Скачиваем zip-архив
-    print("\n⬇️ Скачиваем ZIP с .webp-файлами (lossless)...")
-    files.download(zip_filename)
+    zip_path = "converted_webp.zip"
+    with zipfile.ZipFile(zip_path, "w") as zipf:
+        for file in uploaded_files:
+            img = Image.open(file).convert("RGBA")
+            webp_name = file.name.replace(".png", ".webp")
+            webp_path = os.path.join(output_dir, webp_name)
+            img.save(webp_path, "webp", lossless=True)
+            zipf.write(webp_path, arcname=webp_name)
 
-    print("🎉 Готово! Все файлы конвертированы без потерь и скачаны в архиве.")
+    # Кнопка для скачивания архива
+    with open(zip_path, "rb") as f:
+        st.download_button("⬇️ Скачать .webp архив", f, file_name=zip_path, mime="application/zip")
+
+    # Очистка (по желанию)
+    for f in os.listdir(output_dir):
+        os.remove(os.path.join(output_dir, f))
+    os.rmdir(output_dir)
+    os.remove(zip_path)
