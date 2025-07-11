@@ -188,4 +188,9 @@ if base_url and any(parsed_fields.values()):
     excel_out = io.BytesIO()
     with pd.ExcelWriter(excel_out, engine="xlsxwriter") as writer:
         df.to_excel(writer, index=False)
-    st.download_button("📥 Скачать Excel-таблицу", data=excel_out.getvalue(), fi
+   st.download_button(
+    label="📥 Скачать Excel-таблицу",
+    data=excel_out.getvalue(),
+    file_name="ссылки.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
