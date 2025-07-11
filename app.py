@@ -1,3 +1,14 @@
+st.markdown("""
+<style>
+.stApp {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB4AAAAQ4CAYAAADo08FDAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAEBndSURBVHgB7L1rYjM5rzRW0CKynqwh+1+LkNduAlUFUJ457/nyK+KMH0ndJG7EnS07/q//5//OwDMyE4j/fMrfT//5qTvPuxzvn9f8zyvn/cIYI/4D8+d6vdo9gQu5x7lN3Zkf51325d+5dTU3PT/3G34Aylfj/OX7wffwdLAFeYpz7/lf4cJozEOT3JDrftk5JO05ZHEFlDXvP+ter9/rukcL70UmyttAIuuiP/MTRwy481XxFK7E1hO9ZHL/gfV+9u53be/jJOTZQ9Wzfp/Umui9BgWTm5ClLrZvh7cLGz2n+L/YBJQETD2lLlAnU...");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+}
+</style>
+""", unsafe_allow_html=True)
 import streamlit as st
 from PIL import Image
 import zipfile
