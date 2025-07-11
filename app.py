@@ -10,12 +10,12 @@ st.set_page_config(page_title="PNG → WebP / HTML5 + Генератор ссы�
 # 🎨 СТИЛИЗАЦИЯ
 st.markdown("""
 <style>
-    .block {
+    .big-block {
         border: 2px solid #28EBA4;
-        border-radius: 16px;
-        padding: 24px;
-        margin: 10px;
-        background-color: #111111;
+        border-radius: 20px;
+        padding: 30px;
+        margin: 20px 0;
+        background-color: #0e0e0e;
     }
     .stRadio > div {
         gap: 1rem;
@@ -31,6 +31,23 @@ st.markdown("""
         color: black;
         font-weight: 600;
     }
+    .link-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0.3rem 0;
+    }
+    .link-label {
+        min-width: 2rem;
+        color: #28EBA4;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    .link-url {
+        font-family: monospace;
+        word-break: break-all;
+        color: #ffffff;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -39,7 +56,7 @@ col1, col2 = st.columns(2)
 # 👈 БЛОК 1 — КОНВЕРТОР
 with col1:
     with st.container():
-        st.markdown('<div class="block">', unsafe_allow_html=True)
+        st.markdown('<div class="big-block">', unsafe_allow_html=True)
         st.header("🎯 PNG → WebP или HTML5")
         format_choice = st.radio("Формат", ["WebP", "HTML5"], horizontal=True)
         uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
@@ -103,7 +120,7 @@ with col1:
 # 👉 БЛОК 2 — ГЕНЕРАТОР ССЫЛОК
 with col2:
     with st.container():
-        st.markdown('<div class="block">', unsafe_allow_html=True)
+        st.markdown('<div class="big-block">', unsafe_allow_html=True)
         st.header("🔗 Генератор ссылок")
         base_url = st.text_input("Основная ссылка")
         link_type = st.radio("Тип параметров", ["ref", "utm"], horizontal=True)
@@ -113,12 +130,11 @@ with col2:
             return [line.strip() for line in raw.split("\n") if line.strip()]
 
         def label_suffixes(fields, index):
-            suffixes = []
+            result = []
             for key, values in fields.items():
                 if values:
-                    val = values[index % len(values)]
-                    suffixes.append(f"{key}={val}")
-            return ", ".join(suffixes)
+                    result.append(values[index % len(values)])
+            return result[0] if result else ""
 
         if link_type == "ref":
             st.markdown("### ref-параметры (можно списки в любом поле)")
@@ -143,8 +159,9 @@ with col2:
                         if values:
                             val = values[i % len(values)]
                             params.append(f"{key}={val}")
-                    result = f"{base_url}?" + "&".join(params)
-                    st.code(f"{result}  ← {label_suffixes(parsed_fields, i)}", language="html")
+                    label = label_suffixes(parsed_fields, i)
+                    url = f"{base_url}?" + "&".join(params)
+                    st.markdown(f"<div class='link-row'><div class='link-label'>{label}</div><div class='link-url'>{url}</div></div>", unsafe_allow_html=True)
 
         elif link_type == "utm":
             st.markdown("### utm-параметры (можно списки в любом поле)")
@@ -169,7 +186,7 @@ with col2:
                         if values:
                             val = values[i % len(values)]
                             params.append(f"{key}={val}")
-                    result = f"{base_url}?" + "&".join(params)
-                    st.code(f"{result}  ← {label_suffixes(parsed_fields, i)}", language="html")
+                    label = label_suffixes(parsed_fields, i)
+                    url = f"{base_url}?" + "&".join(params)
+                    st.markdown(f"<div class='link-row'><div class='link-label'>{label}</div><div class='link-url'>{url}</div></div>", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
-
