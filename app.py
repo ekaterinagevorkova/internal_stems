@@ -1,40 +1,61 @@
 import streamlit as st
 from PIL import Image
 import zipfile
+import base64
 import os
 
-# Заголовок страницы
-st.title("🖼 PNG → WebP без потерь")
+st.set_page_config(page_title="PNG → WebP/HTML", layout="centered")
 
-# Инструкция
+st.title("🖼 PNG → WebP или HTML")
+
 st.markdown("""
-Загрузите один или несколько PNG-файлов — они будут автоматически конвертированы в формат WebP без потери качества.  
-Готовый архив с .webp можно будет скачать в один клик.  
+Загрузите PNG-файлы и выберите, как их обработать:  
+- **WebP**: без потерь, упакованные в ZIP  
+- **HTML**: каждый PNG встраивается в отдельный `.html` файл (base64)  
 """)
 
-# Загрузка файлов
+# Выбор формата
+format_choice = st.radio("Выберите формат конвертации:", ["WebP", "HTML"])
+
 uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
 
 if uploaded_files:
-    # Создаём папку для временных файлов
     output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
 
-    zip_path = "converted_webp.zip"
-    with zipfile.ZipFile(zip_path, "w") as zipf:
+    zip_filename = "converted_files.zip"
+
+    with zipfile.ZipFile(zip_filename, "w") as zipf:
         for file in uploaded_files:
             img = Image.open(file).convert("RGBA")
-            webp_name = file.name.replace(".png", ".webp")
-            webp_path = os.path.join(output_dir, webp_name)
-            img.save(webp_path, "webp", lossless=True)
-            zipf.write(webp_path, arcname=webp_name)
+            base_name = file.name.rsplit(".", 1)[0]
+
+            if format_choice == "WebP":
+                webp_path = os.path.join(output_dir, base_name + ".webp")
+                img.save(webp_path, "webp", lossless=True)
+                zipf.write(webp_path, arcname=os.path.basename(webp_path))
+
+            elif format_choice == "HTML":
+                buffered = base64.b64encode(file.read()).decode()
+                html_content = f"""
+                <html>
+                <body>
+                <h3>{file.name}</h3>
+                <img src="data:image/png;base64,{buffered}" />
+                </body>
+                </html>
+                """
+                html_path = os.path.join(output_dir, base_name + ".html")
+                with open(html_path, "w") as html_file:
+                    html_file.write(html_content)
+                zipf.write(html_path, arcname=os.path.basename(html_path))
 
     # Кнопка для скачивания архива
-    with open(zip_path, "rb") as f:
-        st.download_button("⬇️ Скачать .webp архив", f, file_name=zip_path, mime="application/zip")
+    with open(zip_filename, "rb") as f:
+        st.download_button("⬇️ Скачать архив", f, file_name=zip_filename, mime="application/zip")
 
-    # Очистка (по желанию)
+    # Очистка
     for f in os.listdir(output_dir):
         os.remove(os.path.join(output_dir, f))
     os.rmdir(output_dir)
-    os.remove(zip_path)
+    os.remove(zip_filename)
