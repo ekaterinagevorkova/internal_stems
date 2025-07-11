@@ -5,23 +5,38 @@ import base64
 import io
 import os
 
+# ВСТРОЕННЫЙ ФОН — base64 от PNG
+st.markdown("""
+<style>
+.stApp {
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB4AAAAQ4CAYAAADo08FDAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAEBndSURBVHgB7L1rYjM5rzRW0CKynqwh+1+LkNduAlUFUJ457/nyK+KMH0ndJG7EnS07/q//5//OwDMyE4j/fMrfT//5qTvPuxzvn9f8zyvn/cIYI/4D8+d6vdo9gQu5x7lN3Zkf51325d+5dTU3PT/3G34Aylfj/OX7wffwdLAFeYpz7/lf4cJozEOT3JDrftk5JO05ZHEFlDXvP+ter9/rukcL70UmyttAIuuiP/MTRwy481XxFK7E1hO9ZHL/gfV+9u53be/jJOTZQ9Wzfp/Umui9BgWTm5ClLrZvh7cLGz2n+L/YBJQETD2lLlAnU...");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# НАСТРОЙКИ СТРАНИЦЫ
 st.set_page_config(page_title="PNG → WebP или HTML5", layout="centered")
 
+# ЗАГОЛОВОК
 st.title("🖼 PNG → WebP или HTML5 (для медийной рекламы)")
 
 st.markdown("""
 Загрузите PNG-файлы и выберите, как их обработать:
 
-- **WebP** — без потерь, изображения в формате .webp  
-- **HTML5** — чистый .html с base64 PNG внутри (для AdFox, DV360, Adform и т.п.)
+- **WebP** — без потерь, изображения в формате `.webp`  
+- **HTML5** — каждый PNG встроен в чистый `.html` (подходит для AdFox, DV360 и др.)
 """)
 
 st.divider()
 
-# Формат конвертации
+# ВЫБОР ФОРМАТА
 format_choice = st.radio("Формат конвертации", ["WebP", "HTML5"], horizontal=True)
 
-# Загрузка PNG-файлов
+# ЗАГРУЗКА ФАЙЛОВ
 uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -73,13 +88,14 @@ if uploaded_files:
                     html_file.write(html_content)
                 zipf.write(html_path, arcname=os.path.basename(html_path))
 
-    # Скачивание архива
+    # КНОПКА СКАЧИВАНИЯ ZIP
     with open(zip_filename, "rb") as f:
         st.download_button("⬇️ Скачать архив", f, file_name=zip_filename, mime="application/zip")
 
-    # Очистка
+    # ОЧИСТКА ВРЕМЕННЫХ ФАЙЛОВ
     for f in os.listdir(output_dir):
         os.remove(os.path.join(output_dir, f))
     os.rmdir(output_dir)
     os.remove(zip_filename)
+
 
