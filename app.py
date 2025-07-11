@@ -1,14 +1,3 @@
-st.markdown("""
-<style>
-.stApp {
-    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB4AAAAQ4CAYAAADo08FDAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAEBndSURBVHgB7L1rYjM5rzRW0CKynqwh+1+LkNduAlUFUJ457/nyK+KMH0ndJG7EnS07/q//5//OwDMyE4j/fMrfT//5qTvPuxzvn9f8zyvn/cIYI/4D8+d6vdo9gQu5x7lN3Zkf51325d+5dTU3PT/3G34Aylfj/OX7wffwdLAFeYpz7/lf4cJozEOT3JDrftk5JO05ZHEFlDXvP+ter9/rukcL70UmyttAIuuiP/MTRwy481XxFK7E1hO9ZHL/gfV+9u53be/jJOTZQ9Wzfp/Umui9BgWTm5ClLrZvh7cLGz2n+L/YBJQETD2lLlAnU...");
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-position: center;
-}
-</style>
-""", unsafe_allow_html=True)
 import streamlit as st
 from PIL import Image
 import zipfile
@@ -16,7 +5,7 @@ import base64
 import io
 import os
 
-# ВСТРОЕННЫЙ ФОН — base64 от PNG
+# 🎨 Фон-картинка Спортс в base64
 st.markdown("""
 <style>
 .stApp {
@@ -29,10 +18,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# НАСТРОЙКИ СТРАНИЦЫ
+# 🧱 Настройки страницы
 st.set_page_config(page_title="PNG → WebP или HTML5", layout="centered")
 
-# ЗАГОЛОВОК
+# 🏷 Заголовок и описание
 st.title("🖼 PNG → WebP или HTML5 (для медийной рекламы)")
 
 st.markdown("""
@@ -44,10 +33,10 @@ st.markdown("""
 
 st.divider()
 
-# ВЫБОР ФОРМАТА
+# 🔘 Формат конвертации
 format_choice = st.radio("Формат конвертации", ["WebP", "HTML5"], horizontal=True)
 
-# ЗАГРУЗКА ФАЙЛОВ
+# 📁 Загрузка файлов
 uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -99,15 +88,12 @@ if uploaded_files:
                     html_file.write(html_content)
                 zipf.write(html_path, arcname=os.path.basename(html_path))
 
-    # КНОПКА СКАЧИВАНИЯ ZIP
+    # ⬇️ Кнопка скачивания архива
     with open(zip_filename, "rb") as f:
         st.download_button("⬇️ Скачать архив", f, file_name=zip_filename, mime="application/zip")
 
-    # ОЧИСТКА ВРЕМЕННЫХ ФАЙЛОВ
+    # 🧹 Очистка временных файлов
     for f in os.listdir(output_dir):
         os.remove(os.path.join(output_dir, f))
     os.rmdir(output_dir)
     os.remove(zip_filename)
-
-
-
