@@ -1,99 +1,45 @@
 import streamlit as st
-from PIL import Image
-import zipfile
-import base64
-import io
-import os
 
-# 🎨 ВСТРОЕННЫЙ ФОН
-st.markdown("""
-<style>
-.stApp {
-    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB4AAAAQ4CAYAAADo08FDAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAEBndSURBVHgB7L1rYjM5rzRW0CKynqwh+1+LkNduAlUFUJ457/nyK+KMH0ndJG7EnS07/q//5//OwDMyE4j/fMrfT//5qTvPuxzvn9f8zyvn/cIYI/4D8+d6vdo9gQu5x7lN3Zkf51325d+5dTU3PT/3G34Aylfj/OX7wffwdLAFeYpz7/lf4cJozEOT3JDrftk5JO05ZHEFlDXvP+ter9/rukcL70UmyttAIuuiP/MTRwy481XxFK7E1hO9ZHL/gfV+9u53be/jJOTZQ9Wzfp/Umui9BgWTm5ClLrZvh7cLGz2n+L/YBJQETD2lLlAnU...");
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-position: center;
-}
-</style>
-""", unsafe_allow_html=True)
+st.set_page_config(page_title="PNG → WebP / HTML5 + Ссылка", layout="centered")
 
-# 🧱 НАСТРОЙКИ
-st.set_page_config(page_title="PNG → WebP или HTML5", layout="centered")
+st.title("🖼 PNG → WebP / HTML5 + Генератор ссылки")
 
-st.title("🖼 PNG → WebP или HTML5 (для медийной рекламы)")
+st.markdown("## 🔗 Генератор ссылок")
 
-st.markdown("""
-Загрузите PNG-файлы и выберите, как их обработать:
+# Поле: основная ссылка
+base_url = st.text_input("Основная ссылка")
 
-- **WebP** — без потерь, изображения в формате `.webp`  
-- **HTML5** — каждый PNG встроен в чистый `.html` (подходит для AdFox, DV360 и др.)
-""")
+# Выбор типа: ref или utm
+link_type = st.radio("Тип параметров", ["ref", "utm"])
 
-st.divider()
+# Если ref
+if link_type == "ref":
+    ref_value = st.selectbox("Выберите ref", ["ref", "ref1", "ref2"])
+    if base_url:
+        result = f"{base_url}?{ref_value}"
+        st.code(result, language="html")
 
-# 🔘 ВЫБОР ФОРМАТА
-format_choice = st.radio("Формат конвертации", ["WebP", "HTML5"], horizontal=True)
+# Если utm
+elif link_type == "utm":
+    st.markdown("### Обязательные параметры")
+    utm_source = st.text_input("utm_source", help="google, yandex, vk")
+    utm_medium = st.text_input("utm_medium", help="cpc, email, banner, article")
+    utm_campaign = st.text_input("utm_campaign", help="promo, discount, sale")
 
-# 📁 ЗАГРУЗКА PNG
-uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
+    st.markdown("### Необязательные параметры")
+    utm_content = st.text_input("utm_content", help="link, landing page")
+    utm_term = st.text_input("utm_term", help="free, -30%, registration")
 
-if uploaded_files:
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
-
-    zip_filename = "converted_files.zip"
-
-    with zipfile.ZipFile(zip_filename, "w") as zipf:
-        for file in uploaded_files:
-            img = Image.open(file).convert("RGBA")
-            base_name = file.name.rsplit(".", 1)[0]
-
-            if format_choice == "WebP":
-                webp_path = os.path.join(output_dir, base_name + ".webp")
-                img.save(webp_path, "webp", lossless=True)
-                zipf.write(webp_path, arcname=os.path.basename(webp_path))
-
-            elif format_choice == "HTML5":
-                buffer = io.BytesIO()
-                img.save(buffer, format="PNG")
-                buffered = base64.b64encode(buffer.getvalue()).decode()
-
-                html_content = f"""<!DOCTYPE html>
-<html lang="ru">
-  <head>
-    <meta charset="UTF-8">
-    <title>Banner</title>
-    <style>
-      html, body {{
-        margin: 0;
-        padding: 0;
-        background: transparent;
-      }}
-      img {{
-        width: 100%;
-        height: auto;
-        display: block;
-      }}
-    </style>
-  </head>
-  <body>
-    <img src="data:image/png;base64,{buffered}" alt="banner" />
-  </body>
-</html>
-"""
-                html_path = os.path.join(output_dir, base_name + ".html")
-                with open(html_path, "w") as html_file:
-                    html_file.write(html_content)
-                zipf.write(html_path, arcname=os.path.basename(html_path))
-
-    # ⬇️ КНОПКА СКАЧИВАНИЯ ZIP
-    with open(zip_filename, "rb") as f:
-        st.download_button("⬇️ Скачать архив", f, file_name=zip_filename, mime="application/zip")
-
-    # 🧹 ОЧИСТКА
-    for f in os.listdir(output_dir):
-        os.remove(os.path.join(output_dir, f))
-    os.rmdir(output_dir)
-    os.remove(zip_filename)
+    if base_url and utm_source and utm_medium and utm_campaign:
+        params = [
+            f"utm_source={utm_source}",
+            f"utm_medium={utm_medium}",
+            f"utm_campaign={utm_campaign}",
+        ]
+        if utm_content:
+            params.append(f"utm_content={utm_content}")
+        if utm_term:
+            params.append(f"utm_term={utm_term}")
+        full_url = f"{base_url}?" + "&".join(params)
+        st.code(full_url, language="html")
 
