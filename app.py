@@ -10,42 +10,42 @@ st.set_page_config(page_title="PNG → WebP / HTML5 + Генератор ссы�
 # 🎨 СТИЛИ
 st.markdown("""
 <style>
-    .stRadio > div { gap: 1rem; }
-    .stRadio > div > label { color: #28EBA4 !important; }
-    .stDownloadButton button {
+    .stRadio > div {{ gap: 1rem; }}
+    .stRadio > div > label {{ color: #28EBA4 !important; }}
+    .stDownloadButton button {{
         background-color: #28EBA4;
         color: black;
         font-weight: 600;
-    }
-    .block-container > div > div {
+    }}
+    .block-container > div > div {{
         border: 2px solid #28EBA4;
         border-radius: 18px;
         padding: 24px;
         margin-bottom: 24px;
         background-color: #111;
-    }
-    .link-row {
+    }}
+    .link-row {{
         display: flex;
         align-items: flex-start;
         gap: 1rem;
         padding: 0.3rem 0;
         flex-wrap: wrap;
-    }
-    .link-label {
+    }}
+    .link-label {{
         min-width: 2rem;
         color: #28EBA4;
         font-weight: bold;
         font-size: 1.2rem;
         word-break: break-word;
         max-width: 100px;
-    }
-    .link-url {
+    }}
+    .link-url {{
         font-family: monospace;
         word-break: break-all;
         color: #ffffff;
         flex: 1;
         min-width: 300px;
-    }
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -83,16 +83,16 @@ with col1:
     <meta charset="UTF-8">
     <title>Banner</title>
     <style>
-      html, body {{
+      html, body {{{{
         margin: 0;
         padding: 0;
         background: transparent;
-      }}
-      img {{
+      }}}}
+      img {{{{
         width: 100%;
         height: auto;
         display: block;
-      }}
+      }}}}
     </style>
   </head>
   <body>
@@ -154,7 +154,6 @@ with col2:
                         params.append(f"{key}={val}")
                 url = f"{base_url}?" + "&".join(params)
 
-                # Показываем изменяющееся значение
                 label = ""
                 for key in changing_fields:
                     if parsed_fields[key]:
@@ -189,7 +188,6 @@ with col2:
                         params.append(f"{key}={val}")
                 url = f"{base_url}?" + "&".join(params)
 
-                # Показываем изменяющееся значение
                 label = ""
                 for key in changing_fields:
                     if parsed_fields[key]:
