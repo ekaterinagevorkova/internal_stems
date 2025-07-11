@@ -7,18 +7,18 @@ import os
 
 st.set_page_config(page_title="PNG → WebP или HTML5", layout="centered")
 
-st.title("🖼 PNG → WebP или HTML5")
+st.title("🖼 PNG → WebP или HTML5 (для медийной рекламы)")
 
 st.markdown("""
 Загрузите PNG-файлы и выберите, как их обработать:
 
 - **WebP** — без потерь, изображения в формате .webp  
-- **HTML5** — каждый PNG встроен в отдельный .html-файл с валидной структурой  
+- **HTML5** — чистый .html с base64 PNG внутри (для AdFox, DV360, Adform и т.п.)
 """)
 
 st.divider()
 
-# Выбор формата
+# Формат конвертации
 format_choice = st.radio("Формат конвертации", ["WebP", "HTML5"], horizontal=True)
 
 # Загрузка PNG-файлов
@@ -49,25 +49,22 @@ if uploaded_files:
 <html lang="ru">
   <head>
     <meta charset="UTF-8">
-    <title>{file.name}</title>
+    <title>Banner</title>
     <style>
-      body {{
-        font-family: sans-serif;
-        padding: 2rem;
-        text-align: center;
-        background-color: #f9f9f9;
+      html, body {{
+        margin: 0;
+        padding: 0;
+        background: transparent;
       }}
       img {{
-        max-width: 100%;
+        width: 100%;
         height: auto;
-        border: 1px solid #ccc;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        display: block;
       }}
     </style>
   </head>
   <body>
-    <h1>{file.name}</h1>
-    <img src="data:image/png;base64,{buffered}" alt="{file.name}" />
+    <img src="data:image/png;base64,{buffered}" alt="banner" />
   </body>
 </html>
 """
@@ -76,12 +73,13 @@ if uploaded_files:
                     html_file.write(html_content)
                 zipf.write(html_path, arcname=os.path.basename(html_path))
 
-    # Кнопка скачивания ZIP-архива
+    # Скачивание архива
     with open(zip_filename, "rb") as f:
         st.download_button("⬇️ Скачать архив", f, file_name=zip_filename, mime="application/zip")
 
-    # Очистка временных файлов
+    # Очистка
     for f in os.listdir(output_dir):
         os.remove(os.path.join(output_dir, f))
     os.rmdir(output_dir)
     os.remove(zip_filename)
+
