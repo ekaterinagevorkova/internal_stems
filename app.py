@@ -164,3 +164,28 @@ with col2:
                 '<div class="link-row"><div class="link-label">{}</div><div class="link-url">{}</div></div>'.format(label, url),
                 unsafe_allow_html=True
             )
+
+
+
+# 👉 Кнопка для скачивания Excel-таблицы с результатами
+import pandas as pd
+
+if base_url and any(parsed_fields.values()):
+    all_results = []
+    for i in range(max_count):
+        row_params = []
+        row_label = ""
+        for key, values in parsed_fields.items():
+            if values:
+                val = values[i % len(values)]
+                row_params.append(f"{key}={val}")
+                if key in changing_fields and not row_label:
+                    row_label = val
+        link = base_url + "?" + "&".join(row_params)
+        all_results.append({"Формат": row_label, "Ссылка": link, "Визуал": ""})
+
+    df = pd.DataFrame(all_results)
+    excel_out = io.BytesIO()
+    with pd.ExcelWriter(excel_out, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False)
+    st.download_button("📥 Скачать Excel-таблицу", data=excel_out.getvalue(), fi
