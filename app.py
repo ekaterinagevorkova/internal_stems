@@ -5,7 +5,7 @@ import base64
 import io
 import os
 
-# 🎨 Фон-картинка Спортс в base64
+# 🎨 ВСТРОЕННЫЙ ФОН КАК base64 PNG
 st.markdown("""
 <style>
 .stApp {
@@ -18,10 +18,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 🧱 Настройки страницы
+# 🧱 НАСТРОЙКИ
 st.set_page_config(page_title="PNG → WebP или HTML5", layout="centered")
 
-# 🏷 Заголовок и описание
+# 🏷 ЗАГОЛОВОК
 st.title("🖼 PNG → WebP или HTML5 (для медийной рекламы)")
 
 st.markdown("""
@@ -33,10 +33,10 @@ st.markdown("""
 
 st.divider()
 
-# 🔘 Формат конвертации
+# 🔘 ВЫБОР ФОРМАТА
 format_choice = st.radio("Формат конвертации", ["WebP", "HTML5"], horizontal=True)
 
-# 📁 Загрузка файлов
+# 📁 ЗАГРУЗКА PNG
 uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -88,12 +88,13 @@ if uploaded_files:
                     html_file.write(html_content)
                 zipf.write(html_path, arcname=os.path.basename(html_path))
 
-    # ⬇️ Кнопка скачивания архива
+    # ⬇️ КНОПКА СКАЧИВАНИЯ ZIP
     with open(zip_filename, "rb") as f:
         st.download_button("⬇️ Скачать архив", f, file_name=zip_filename, mime="application/zip")
 
-    # 🧹 Очистка временных файлов
+    # 🧹 УДАЛЕНИЕ ВРЕМЕННЫХ ФАЙЛОВ
     for f in os.listdir(output_dir):
         os.remove(os.path.join(output_dir, f))
     os.rmdir(output_dir)
     os.remove(zip_filename)
+
