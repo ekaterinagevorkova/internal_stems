@@ -68,11 +68,11 @@ with col2:
         return [value.strip()]
 
     if link_type == "ref":
-        st.markdown("ref-параметры (можно списки в любом поле)")
+        st.markdown("ref-параметры")
         ref_inputs = [st.text_input(f"ref{i if i > 0 else ''}") for i in range(5)]
         parsed = {f"ref{i if i > 0 else ''}": parse_multi(val) for i, val in enumerate(ref_inputs)}
     else:
-        st.markdown("utm-параметры (можно списки в любом поле)")
+        st.markdown("utm-параметры")
         keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
         ref_inputs = [st.text_input(key) for key in keys]
         parsed = {key: parse_multi(val) for key, val in zip(keys, ref_inputs)}
