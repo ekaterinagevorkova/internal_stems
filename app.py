@@ -1,131 +1,110 @@
 import streamlit as st
-import zipfile
-import io
-import os
-from PIL import Image
 import base64
+import zipfile
+from PIL import Image
+import io
 import pandas as pd
 
 st.set_page_config(page_title="ИНСТРУМЕНТЫ", layout="wide")
-
 st.markdown("""
-    <style>
-    .block-container {
-        padding-top: 2rem;
-    }
-    .tool-block {
-        border: 2px solid #28EBA4;
-        border-radius: 20px;
-        padding: 20px;
-        margin: 10px;
-        background-color: #0E0E10;
-    }
-    .tool-title {
-        color: #28EBA4;
-        font-size: 24px;
-        font-weight: bold;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    .download-buttons button {
-        background-color: #28EBA4 !important;
-        color: black !important;
-        font-weight: bold;
-        width: 100%%;
-    }
-    .link-label {
-        font-weight: bold;
-        color: #28EBA4;
-        min-width: 120px;
-        display: inline-block;
-    }
-    .link-row {
-        margin-bottom: 10px;
-    }
-    </style>
+    <h1 style='text-align: center;'>ИНСТРУМЕНТЫ</h1>
 """, unsafe_allow_html=True)
-
-st.markdown("<h1 style='text-align: center;'>ИНСТРУМЕНТЫ</h1>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 
-# ========== Конвертор ==========
+# -------------------- КОНВЕРТОР -------------------- #
 with col1:
-    st.markdown("<div class='tool-block'>", unsafe_allow_html=True)
-    st.markdown("<div class='tool-title'>КОНВЕРТОР</div>", unsafe_allow_html=True)
+    st.subheader("🧰 КОНВЕРТОР")
+    format_type = st.radio("Формат", ["WebP", "HTML5"], horizontal=True)
+    uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
+    archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
 
-    format_option = st.radio("Формат", ["WebP", "HTML5"], horizontal=True)
-    uploaded_files = st.file_uploader("Загрузите PNG-файлы", type="png", accept_multiple_files=True)
+    if format_type == "WebP" and uploaded_files:
+        converted_files = []
+        converted_filenames = []
+        for file in uploaded_files:
+            image = Image.open(file).convert("RGBA")
+            webp_io = io.BytesIO()
+            image.save(webp_io, format="WEBP")
+            converted_files.append(webp_io.getvalue())
+            converted_filenames.append(file.name.replace(".png", ".webp"))
 
-    archive_name = st.text_input("опционально: название файла")
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+            for name, data in zip(converted_filenames, converted_files):
+                zip_file.writestr(name, data)
 
-    if format_option and uploaded_files:
-        archive_buffer = io.BytesIO()
-        with zipfile.ZipFile(archive_buffer, "w") as zipf:
-            for uploaded_file in uploaded_files:
-                image = Image.open(uploaded_file).convert("RGBA")
-                filename = os.path.splitext(uploaded_file.name)[0]
-                if format_option == "WebP":
-                    buffer = io.BytesIO()
-                    image.save(buffer, format="WEBP", lossless=True)
-                    zipf.writestr(f"{filename}.webp", buffer.getvalue())
-                elif format_option == "HTML5":
-                    html_str = f"""<html><body><img src='data:image/png;base64,{base64.b64encode(uploaded_file.read()).decode()}'></body></html>"""
-                    zipf.writestr(f"{filename}.html", html_str)
+        final_name = (archive_name.strip() or "converted_images").replace(" ", "_") + ".zip"
+        st.download_button(
+            "📦 СКАЧАТЬ АРХИВ",
+            data=zip_buffer.getvalue(),
+            file_name=final_name,
+            mime="application/zip"
+        )
 
-        archive_buffer.seek(0)
-        btn_name = "📦 СКАЧАТЬ АРХИВ"
-        archive_filename = archive_name.strip() + ".zip" if archive_name else "converted_images.zip"
-        st.download_button(btn_name, data=archive_buffer, file_name=archive_filename)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ========== Генерация ссылок ==========
+# -------------------- ГЕНЕРАТОР ССЫЛОК -------------------- #
 with col2:
-    st.markdown("<div class='tool-block'>", unsafe_allow_html=True)
-    st.markdown("<div class='tool-title'>ГЕНЕРАЦИЯ ССЫЛОК</div>", unsafe_allow_html=True)
-
+    st.subheader("🔗 ГЕНЕРАЦИЯ ССЫЛОК")
     base_url = st.text_input("Основная ссылка")
     link_type = st.radio("Тип параметров", ["ref", "utm"], horizontal=True)
 
-    def parse_multi_input(value):
-        raw = value.replace(",", "\n").replace(" ", "\n")
-        return [line.strip() for line in raw.split("\n") if line.strip()]
+    def parse_multi(value):
+        if not value:
+            return [""]
+        if "," in value:
+            return [v.strip() for v in value.split(",") if v.strip()]
+        if "\n" in value:
+            return [v.strip() for v in value.split("\n") if v.strip()]
+        if " " in value:
+            return [v.strip() for v in value.split(" ") if v.strip()]
+        return [value.strip()]
 
-    fields = {}
     if link_type == "ref":
-        st.markdown("### ref-параметры (можно списки в любом поле)")
-        for name in ["ref", "ref1", "ref2", "ref3", "ref4"]:
-            fields[name] = parse_multi_input(st.text_input(name))
+        st.markdown("**ref-параметры (можно списки в любом поле)**")
+        ref_inputs = [st.text_input(f"ref{i if i > 0 else ''}") for i in range(5)]
+        parsed = {f"ref{i if i > 0 else ''}": parse_multi(val) for i, val in enumerate(ref_inputs)}
+
     else:
-        st.markdown("### utm-параметры (можно списки в любом поле)")
-        for name in ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]:
-            fields[name] = parse_multi_input(st.text_input(name))
+        st.markdown("**utm-параметры (можно списки в любом поле)**")
+        keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
+        ref_inputs = [st.text_input(key) for key in keys]
+        parsed = {key: parse_multi(val) for key, val in zip(keys, ref_inputs)}
 
-    max_len = max((len(v) for v in fields.values()), default=0)
+    from itertools import product
     all_results = []
+    varying_key = ""
 
-    if base_url and any(fields.values()):
-        for i in range(max_len):
-            url = base_url + "?"
-            label = ""
-            for key, val_list in fields.items():
-                value = val_list[i] if i < len(val_list) else val_list[-1] if val_list else ""
-                url += f"{key}={value}&"
-                if i < len(val_list):
-                    label = value  # последняя изменяемая переменная
-            st.markdown(f"<div class='link-row'><div class='link-label'>{label}</div> {url[:-1]}</div>", unsafe_allow_html=True)
-            all_results.append({"Формат": label, "Ссылка": url[:-1], "Визуал": ""})
+    if base_url:
+        lens = {k: len(v) for k, v in parsed.items() if v}
+        max_len = max(lens.values()) if lens else 1
+        for k in parsed:
+            if len(parsed[k]) == max_len:
+                varying_key = k
+                break
+
+        combined = list(product(*[parsed[k] if parsed[k] else [""] for k in parsed]))
+        keys = list(parsed.keys())
+
+        for combo in combined:
+            params = "&".join([f"{k}={v}" for k, v in zip(keys, combo) if v])
+            full_url = f"{base_url}?{params}"
+            value = combo[keys.index(varying_key)] if varying_key in keys else ""
+            st.markdown(
+                f"<div style='display: flex; align-items: center; gap: 10px;'>"
+                f"<span style='color: #28EBA4; font-weight: bold; min-width: 60px'>{value}</span>"
+                f"<code style='word-break: break-all'>{full_url}</code>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
+            all_results.append({"Формат": value, "Ссылка": full_url, "Визуал": ""})
 
     if all_results:
         df = pd.DataFrame(all_results)
-        excel_out = io.BytesIO()
-        df.to_excel(excel_out, index=False)
-        st.download_button("📥 СКАЧАТЬ EXCEL", data=excel_out.getvalue(), file_name="ссылки.xlsx")
+        excel_buf = io.BytesIO()
+        csv_buf = io.StringIO()
+        df.to_excel(excel_buf, index=False)
+        df.to_csv(csv_buf, index=False)
 
-        csv_out = df.to_csv(index=False).encode("utf-8")
-        st.download_button("📄 СКАЧАТЬ CSV", data=csv_out, file_name="ссылки.csv")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
+        st.download_button("📥 СКАЧАТЬ EXCEL", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
+        st.download_button("📥 СКАЧАТЬ CSV", data=csv_buf.getvalue(), file_name="ссылки.csv")
 
