@@ -6,28 +6,36 @@ import io
 import pandas as pd
 
 st.set_page_config(page_title="ИНСТРУМЕНТЫ", layout="wide")
-st.markdown("""
-    <h1 style='text-align: center;'>ИНСТРУМЕНТЫ</h1>
-""", unsafe_allow_html=True)
+
+st.markdown("<h1 style='text-align: center;'>ИНСТРУМЕНТЫ</h1>", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 
 # -------------------- КОНВЕРТОР -------------------- #
 with col1:
-    st.subheader("🧰 КОНВЕРТОР")
+    st.markdown("<h3 style='color:#28EBA4;'>КОНВЕРТОР</h3>", unsafe_allow_html=True)
     format_type = st.radio("Формат", ["WebP", "HTML5"], horizontal=True)
     uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
     archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
 
-    if format_type == "WebP" and uploaded_files:
+    if uploaded_files:
         converted_files = []
         converted_filenames = []
         for file in uploaded_files:
             image = Image.open(file).convert("RGBA")
-            webp_io = io.BytesIO()
-            image.save(webp_io, format="WEBP")
-            converted_files.append(webp_io.getvalue())
-            converted_filenames.append(file.name.replace(".png", ".webp"))
+            filename = file.name.rsplit(".", 1)[0]
+            if format_type == "WebP":
+                buffer = io.BytesIO()
+                image.save(buffer, format="WEBP", lossless=True)
+                converted_files.append(buffer.getvalue())
+                converted_filenames.append(filename + ".webp")
+            elif format_type == "HTML5":
+                buffer = io.BytesIO()
+                image.save(buffer, format="PNG")
+                b64_img = base64.b64encode(buffer.getvalue()).decode()
+                html_content = f"""<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body><img src='data:image/png;base64,{b64_img}'></body></html>"""
+                converted_files.append(html_content.encode("utf-8"))
+                converted_filenames.append(filename + ".html")
 
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w") as zip_file:
@@ -44,7 +52,7 @@ with col1:
 
 # -------------------- ГЕНЕРАТОР ССЫЛОК -------------------- #
 with col2:
-    st.subheader("🔗 ГЕНЕРАЦИЯ ССЫЛОК")
+    st.markdown("<h3 style='color:#28EBA4;'>ГЕНЕРАЦИЯ ССЫЛОК</h3>", unsafe_allow_html=True)
     base_url = st.text_input("Основная ссылка")
     link_type = st.radio("Тип параметров", ["ref", "utm"], horizontal=True)
 
@@ -60,12 +68,11 @@ with col2:
         return [value.strip()]
 
     if link_type == "ref":
-        st.markdown("**ref-параметры (можно списки в любом поле)**")
+        st.markdown("ref-параметры (можно списки в любом поле)")
         ref_inputs = [st.text_input(f"ref{i if i > 0 else ''}") for i in range(5)]
         parsed = {f"ref{i if i > 0 else ''}": parse_multi(val) for i, val in enumerate(ref_inputs)}
-
     else:
-        st.markdown("**utm-параметры (можно списки в любом поле)**")
+        st.markdown("utm-параметры (можно списки в любом поле)")
         keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
         ref_inputs = [st.text_input(key) for key in keys]
         parsed = {key: parse_multi(val) for key, val in zip(keys, ref_inputs)}
@@ -105,6 +112,5 @@ with col2:
         df.to_excel(excel_buf, index=False)
         df.to_csv(csv_buf, index=False)
 
-        st.download_button("📥 СКАЧАТЬ EXCEL", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
-        st.download_button("📥 СКАЧАТЬ CSV", data=csv_buf.getvalue(), file_name="ссылки.csv")
-
+        st.download_button("Скачать Excel", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
+        st.download_button("Скачать CSV", data=csv_buf.getvalue(), file_name="ссылки.csv")
