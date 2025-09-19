@@ -106,3 +106,122 @@ with col2:
 
         st.download_button("Скачать Excel", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
         st.download_button("Скачать CSV", data=csv_buf.getvalue(), file_name="ссылки.csv")
+import streamlit as st
+import io
+import zipfile
+
+st.set_page_config(page_title="HTML Banner Generator", layout="wide")
+
+st.markdown("<h1 style='text-align:center;'>ГЕНЕРАЦИЯ HTML-БАННЕРОВ</h1>", unsafe_allow_html=True)
+
+# Шаблоны HTML с плейсхолдером
+templates = {
+    "FullScreen (320x480)": """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width=320px,height=480px">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdFox Banner</title>
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/0/52/558ad552e5e0256fae54ff7fc6d8c.css">
+</head>
+<body>
+  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
+    <div class="banner" style="width:100%;height:100%;">
+      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+    </div>
+  </a>
+</body>
+</html>""",
+    "Mobile Branding (100%x200px)": """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width=100%,height=200px">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdFox Banner</title>
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/e/4d/85f288418a95f555eb5035aebed92.css">
+</head>
+<body>
+  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
+    <div class="banner" style="width:100%;height:100%;">
+      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+    </div>
+  </a>
+</body>
+</html>""",
+    "1Right (300x600)": """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width=300px,height=600px">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdFox Banner</title>
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/2/96/4af4f5dcdeb75f36b9197556810c8.css">
+</head>
+<body>
+  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
+    <div class="banner" style="width:100%;height:100%;">
+      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+    </div>
+  </a>
+</body>
+</html>""",
+    "Desktop Branding (1920x1080)": """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width=1920,height=1080">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdFox Banner</title>
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/f/a3/a35026ae42d4e609a322ffb220623.css">
+</head>
+<body>
+  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
+    <div class="banner" style="width:100%;height:100%;">
+      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+    </div>
+  </a>
+</body>
+</html>""",
+    "Mobile_top (100%x250px)": """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width=100%,height=250px">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdFox Banner</title>
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/9/58/782b7c244f327056e145d297c6f4b.css">
+</head>
+<body>
+  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
+    <div class="banner" style="width:100%;height:100%;">
+      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+    </div>
+  </a>
+</body>
+</html>"""
+}
+
+# UI
+format_choice = st.selectbox("Выберите формат баннера", list(templates.keys()))
+image_url = st.text_input("Ссылка на визуал")
+
+if image_url and format_choice:
+    # Подставляем ссылку
+    html_code = templates[format_choice].replace("ССЫЛКА НА ИЗОБРАЖЕНИЕ", image_url)
+
+    # Создаём ZIP
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w") as zf:
+        zf.writestr("index.html", html_code)
+
+    # Кнопка для скачивания
+    st.download_button(
+        "📦 Скачать ZIP с index.html",
+        data=zip_buffer.getvalue(),
+        file_name=f"{format_choice.replace(' ', '_')}.zip",
+        mime="application/zip"
+    )
+
+
