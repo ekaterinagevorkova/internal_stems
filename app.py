@@ -112,7 +112,7 @@ import zipfile
 
 st.set_page_config(page_title="HTML Banner Generator", layout="wide")
 
-st.markdown("<h1 style='text-align:center;'>КОНВЕРТАЦИЯ В HTML</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ В HTML</h1>", unsafe_allow_html=True)
 
 # Шаблоны HTML с плейсхолдером
 templates = {
