@@ -6,8 +6,6 @@ import pandas as pd
 
 st.set_page_config(page_title="ИНСТРУМЕНТЫ", layout="wide")
 
-st.markdown("<h1 style='text-align: center;'></h1>", unsafe_allow_html=True)
-
 col1, col2 = st.columns(2)
 
 # -------------------- КОНВЕРТОР (PNG -> WebP) -------------------- #
