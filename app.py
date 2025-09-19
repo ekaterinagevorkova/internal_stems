@@ -1,5 +1,4 @@
 import streamlit as st
-import base64
 import zipfile
 from PIL import Image
 import io
@@ -11,31 +10,24 @@ st.markdown("<h1 style='text-align: center;'>ИНСТРУМЕНТЫ</h1>", unsaf
 
 col1, col2 = st.columns(2)
 
-# -------------------- КОНВЕРТОР -------------------- #
+# -------------------- КОНВЕРТОР (PNG -> WebP) -------------------- #
 with col1:
-    st.markdown("<h3 style='color:#28EBA4;'>КОНВЕРТОР</h3>", unsafe_allow_html=True)
-    format_type = st.radio("Формат", ["WebP", "HTML5"], horizontal=True)
+    st.markdown("<h3 style='color:#28EBA4;'>КОНВЕРТОР (PNG → WebP)</h3>", unsafe_allow_html=True)
     uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
     archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
 
     if uploaded_files:
         converted_files = []
         converted_filenames = []
+
         for file in uploaded_files:
             image = Image.open(file).convert("RGBA")
             filename = file.name.rsplit(".", 1)[0]
-            if format_type == "WebP":
-                buffer = io.BytesIO()
-                image.save(buffer, format="WEBP", lossless=True)
-                converted_files.append(buffer.getvalue())
-                converted_filenames.append(filename + ".webp")
-            elif format_type == "HTML5":
-                buffer = io.BytesIO()
-                image.save(buffer, format="PNG")
-                b64_img = base64.b64encode(buffer.getvalue()).decode()
-                html_content = f"""<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body><img src='data:image/png;base64,{b64_img}'></body></html>"""
-                converted_files.append(html_content.encode("utf-8"))
-                converted_filenames.append(filename + ".html")
+            buffer = io.BytesIO()
+            # lossless=True можно заменить на quality=90/method=6 при желании
+            image.save(buffer, format="WEBP", lossless=True)
+            converted_files.append(buffer.getvalue())
+            converted_filenames.append(filename + ".webp")
 
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w") as zip_file:
@@ -94,7 +86,7 @@ with col2:
 
         for combo in combined:
             params = "&".join([f"{k}={v}" for k, v in zip(keys, combo) if v])
-            full_url = f"{base_url}?{params}"
+            full_url = f"{base_url}?{params}" if params else base_url
             value = combo[keys.index(varying_key)] if varying_key in keys else ""
             st.markdown(
                 f"<div style='display: flex; align-items: center; gap: 10px;'>"
