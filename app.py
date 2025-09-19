@@ -44,7 +44,7 @@ with col1:
 
 # -------------------- ГЕНЕРАТОР ССЫЛОК -------------------- #
 with col2:
-    st.markdown("<h3 style='color:#28EBA4;'>ГЕНЕРАЦИЯ ССЫЛОК</h3>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color:#28EBA4;'>ГЕНЕРАЦИЯ ССЫЛОК</h3>", unsafe_allow_html=True)
     base_url = st.text_input("Основная ссылка")
     link_type = st.radio("Тип параметров", ["ref", "utm"], horizontal=True)
 
