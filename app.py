@@ -201,45 +201,6 @@ templates = {
 </body>
 </html>"""
 }
-# -------------------- DATA URL (PNG/JPEG/WebP → data:) -------------------- #
-st.markdown("<h3 style='color:#28EBA4;'>DATA URL</h3>", unsafe_allow_html=True)
-img_file = st.file_uploader(
-    "Загрузите изображение (PNG/JPEG/WebP)",
-    type=["png", "jpg", "jpeg", "webp"],
-    accept_multiple_files=False,
-    key="data_url_uploader",
-)
-
-def _detect_mime(uploaded) -> str:
-    # 1) пробуем по mime-типу, который отдаёт браузер
-    if getattr(uploaded, "type", None):
-        return uploaded.type
-    # 2) иначе — по расширению
-    suffix = uploaded.name.split(".")[-1].lower()
-    return {
-        "png": "image/png",
-        "jpg": "image/jpeg",
-        "jpeg": "image/jpeg",
-        "webp": "image/webp",
-    }.get(suffix, "application/octet-stream")
-
-if img_file is not None:
-    raw = img_file.read()
-    mime = _detect_mime(img_file)
-    data_url = f"data:{mime};base64,{base64.b64encode(raw).decode('utf-8')}"
-    st.image(raw, caption="Превью", use_container_width=True)
-    st.markdown("**Ссылка (data URL):**")
-    st.text_area("",
-                 value=data_url,
-                 height=160,
-                 label_visibility="collapsed")
-    st.download_button(
-        "📄 Скачать как .txt",
-        data=data_url.encode("utf-8"),
-        file_name="image_data_url.txt",
-        mime="text/plain",
-    )
-
 
 # UI
 format_choice = st.selectbox("Выберите формат баннера", list(templates.keys()))
