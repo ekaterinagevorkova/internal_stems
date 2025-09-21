@@ -4,6 +4,8 @@ from PIL import Image
 import io
 import base64
 import pandas as pd
+import re
+from itertools import product, permutations
 
 st.set_page_config(page_title="ИНСТРУМЕНТЫ", layout="wide")
 
@@ -68,7 +70,6 @@ with col2:
         ref_inputs = [st.text_input(key) for key in keys]
         parsed = {key: parse_multi(val) for key, val in zip(keys, ref_inputs)}
 
-    from itertools import product
     all_results = []
     varying_key = ""
 
@@ -105,126 +106,122 @@ with col2:
 
         st.download_button("Скачать Excel", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
         st.download_button("Скачать CSV", data=csv_buf.getvalue(), file_name="ссылки.csv")
-import streamlit as st
-import io
-import zipfile
 
-st.set_page_config(page_title="Internal tools", layout="wide")
+    # -------------------- ГЕНЕРАТОР СЛАГОВ -------------------- #
+    st.markdown("<h1 style='color:#28EBA4;'>СЛАГИ ДЛЯ ССЫЛОК</h3>", unsafe_allow_html=True)
+    words_raw = st.text_input("2–3 слова для слага (через пробел / запятую)", key="slug_words", placeholder="пример: гол статистика")
+    to_lower = st.checkbox("в нижнем регистре", value=True, key="slug_lower")
 
+    if words_raw:
+        # разбираем вход: пробелы/запятые/переносы
+        words = [w for w in re.split(r"[\s,]+", words_raw.strip()) if w]
+        if to_lower:
+            words = [w.lower() for w in words]
+        if 2 <= len(words) <= 3:
+            seps = ['-', '_', '.']
+            combos = set()
+            for p in permutations(words):
+                for sep in seps:
+                    combos.add(sep.join(p))
+            slugs = sorted(combos, key=lambda s: (len(s), s))
+            text_blob = "\n".join(slugs)
+            st.text_area("Варианты слагов", value=text_blob, height=200)
+            st.download_button("Скачать .txt", data=text_blob.encode('utf-8'), file_name="slugs.txt", mime="text/plain")
+        else:
+            st.caption("Введите от 2 до 3 слов.")
+
+# -------------------- КОНВЕРТАЦИЯ В HTML -------------------- #
 st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ В HTML</h1>", unsafe_allow_html=True)
 
-# -------------------- ГЕНЕРАТОР СЛАГОВ -------------------- #
-st.markdown("<h1 style='color:#28EBA4;'>СЛАГИ ДЛЯ ССЫЛОК</h3>", unsafe_allow_html=True)
-words_raw = st.text_input("2–3 слова для слага (через пробел / запятую)", key="slug_words", placeholder="пример: гол статистика")
-to_lower = st.checkbox("в нижнем регистре", value=True, key="slug_lower")
-
-if words_raw:
-# разбираем вход: пробелы/запятые/переносы
-words = [w for w in re.split(r"[\s,]+", words_raw.strip()) if w]
-if to_lower:
-words = [w.lower() for w in words]
-if 2 <= len(words) <= 3:
-seps = ['-', '_', '.']
-combos = set()
-for p in permutations(words):
-for sep in seps:
-combos.add(sep.join(p))
-slugs = sorted(combos, key=lambda s: (len(s), s))
-text_blob = "\n".join(slugs)
-st.text_area("Варианты слагов", value=text_blob, height=200)
-st.download_button("Скачать .txt", data=text_blob.encode('utf-8'), file_name="slugs.txt", mime="text/plain")
-else:
-st.caption("Введите от 2 до 3 слов.")
 # Шаблоны HTML с плейсхолдером
 templates = {
     "FullScreen (320x480)": """<!DOCTYPE html>
-<html lang="ru">
+<html lang=\"ru\">
 <head>
-  <meta charset="UTF-8">
-  <meta name="ad.size" content="width=320px,height=480px">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset=\"UTF-8\">
+  <meta name=\"ad.size\" content=\"width=320px,height=480px\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
   <title>AdFox Banner</title>
-  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/0/52/558ad552e5e0256fae54ff7fc6d8c.css">
+  <link rel=\"stylesheet\" href=\"https://dumpster.cdn.sports.ru/0/52/558ad552e5e0256fae54ff7fc6d8c.css\">
 </head>
 <body>
-  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
-    <div class="banner" style="width:100%;height:100%;">
-      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+  <a href=\"%banner.reference_mrc_user1%\" target=\"%banner.target%\" style=\"display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;\">
+    <div class=\"banner\" style=\"width:100%;height:100%;\">
+      <img src=\"ССЫЛКА НА ИЗОБРАЖЕНИЕ\" alt=\"баннер\" style=\"width:100%;height:100%;display:block;\">
     </div>
   </a>
 </body>
 </html>""",
     "Mobile Branding (100%x200px)": """<!DOCTYPE html>
-<html lang="ru">
+<html lang=\"ru\">
 <head>
-  <meta charset="UTF-8">
-  <meta name="ad.size" content="width=100%,height=200px">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset=\"UTF-8\">
+  <meta name=\"ad.size\" content=\"width=100%,height=200px\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
   <title>AdFox Banner</title>
-  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/e/4d/85f288418a95f555eb5035aebed92.css">
+  <link rel=\"stylesheet\" href=\"https://dumpster.cdn.sports.ru/e/4d/85f288418a95f555eb5035aebed92.css\">
 </head>
 <body>
-  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
-    <div class="banner" style="width:100%;height:100%;">
-      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+  <a href=\"%banner.reference_mrc_user1%\" target=\"%banner.target%\" style=\"display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;\">
+    <div class=\"banner\" style=\"width:100%;height:100%;\">
+      <img src=\"ССЫЛКА НА ИЗОБРАЖЕНИЕ\" alt=\"баннер\" style=\"width:100%;height:100%;display:block;\">
     </div>
   </a>
 </body>
 </html>""",
     "1Right (300x600)": """<!DOCTYPE html>
-<html lang="ru">
+<html lang=\"ru\">
 <head>
-  <meta charset="UTF-8">
-  <meta name="ad.size" content="width=300px,height=600px">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset=\"UTF-8\">
+  <meta name=\"ad.size\" content=\"width=300px,height=600px\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
   <title>AdFox Banner</title>
-  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/2/96/4af4f5dcdeb75f36b9197556810c8.css">
+  <link rel=\"stylesheet\" href=\"https://dumpster.cdn.sports.ru/2/96/4af4f5dcdeb75f36b9197556810c8.css\">
 </head>
 <body>
-  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
-    <div class="banner" style="width:100%;height:100%;">
-      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+  <a href=\"%banner.reference_mrc_user1%\" target=\"%banner.target%\" style=\"display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;\">
+    <div class=\"banner\" style=\"width:100%;height:100%;\">
+      <img src=\"ССЫЛКА НА ИЗОБРАЖЕНИЕ\" alt=\"баннер\" style=\"width:100%;height:100%;display:block;\">
     </div>
   </a>
 </body>
 </html>""",
     "Desktop Branding (1920x1080)": """<!DOCTYPE html>
-<html lang="ru">
+<html lang=\"ru\">
 <head>
-  <meta charset="UTF-8">
-  <meta name="ad.size" content="width=1920,height=1080">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset=\"UTF-8\">
+  <meta name=\"ad.size\" content=\"width=1920,height=1080\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
   <title>AdFox Banner</title>
-  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/f/a3/a35026ae42d4e609a322ffb220623.css">
+  <link rel=\"stylesheet\" href=\"https://dumpster.cdn.sports.ru/f/a3/a35026ae42d4e609a322ffb220623.css\">
 </head>
 <body>
-  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
-    <div class="banner" style="width:100%;height:100%;">
-      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+  <a href=\"%banner.reference_mrc_user1%\" target=\"%banner.target%\" style=\"display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;\">
+    <div class=\"banner\" style=\"width:100%;height:100%;\">
+      <img src=\"ССЫЛКА НА ИЗОБРАЖЕНИЕ\" alt=\"баннер\" style=\"width:100%;height:100%;display:block;\">
     </div>
   </a>
 </body>
 </html>""",
     "Mobile_top (100%x250px)": """<!DOCTYPE html>
-<html lang="ru">
+<html lang=\"ru\">
 <head>
-  <meta charset="UTF-8">
-  <meta name="ad.size" content="width=100%,height=250px">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset=\"UTF-8\">
+  <meta name=\"ad.size\" content=\"width=100%,height=250px\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
   <title>AdFox Banner</title>
-  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/9/58/782b7c244f327056e145d297c6f4b.css">
+  <link rel=\"stylesheet\" href=\"https://dumpster.cdn.sports.ru/9/58/782b7c244f327056e145d297c6f4b.css\">
 </head>
 <body>
-  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
-    <div class="banner" style="width:100%;height:100%;">
-      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+  <a href=\"%banner.reference_mrc_user1%\" target=\"%banner.target%\" style=\"display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;\">
+    <div class=\"banner\" style=\"width:100%;height:100%;\">
+      <img src=\"ССЫЛКА НА ИЗОБРАЖЕНИЕ\" alt=\"баннер\" style=\"width:100%;height:100%;display:block;\">
     </div>
   </a>
 </body>
 </html>"""
 }
 
-# UI
 format_choice = st.selectbox("Выберите формат баннера", list(templates.keys()))
 image_url = st.text_input("Ссылка на визуал")
 
@@ -244,5 +241,3 @@ if image_url and format_choice:
         file_name=f"{format_choice.replace(' ', '_')}.zip",
         mime="application/zip"
     )
-
-
