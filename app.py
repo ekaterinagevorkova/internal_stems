@@ -112,7 +112,28 @@ import zipfile
 st.set_page_config(page_title="Internal tools", layout="wide")
 
 st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ В HTML</h1>", unsafe_allow_html=True)
+# -------------------- ГЕНЕРАТОР СЛАГОВ -------------------- #
+st.markdown("<h1 style='color:#28EBA4;'>СЛАГИ ДЛЯ ССЫЛОК</h3>", unsafe_allow_html=True)
+words_raw = st.text_input("2–3 слова для слага (через пробел / запятую)", key="slug_words", placeholder="пример: гол статистика")
+to_lower = st.checkbox("в нижнем регистре", value=True, key="slug_lower")
 
+if words_raw:
+# разбираем вход: пробелы/запятые/переносы
+words = [w for w in re.split(r"[\s,]+", words_raw.strip()) if w]
+if to_lower:
+words = [w.lower() for w in words]
+if 2 <= len(words) <= 3:
+seps = ['-', '_', '.']
+combos = set()
+for p in permutations(words):
+for sep in seps:
+combos.add(sep.join(p))
+slugs = sorted(combos, key=lambda s: (len(s), s))
+text_blob = "\n".join(slugs)
+st.text_area("Варианты слагов", value=text_blob, height=200)
+st.download_button("Скачать .txt", data=text_blob.encode('utf-8'), file_name="slugs.txt", mime="text/plain")
+else:
+st.caption("Введите от 2 до 3 слов.")
 # Шаблоны HTML с плейсхолдером
 templates = {
     "FullScreen (320x480)": """<!DOCTYPE html>
