@@ -7,7 +7,7 @@ import pandas as pd
 import re
 from itertools import product, permutations
 
-st.set_page_config(page_title="ИНСТРУМЕНТЫ", layout="wide")
+st.set_page_config(page_title="Internal tools", layout="wide")
 
 col1, col2 = st.columns(2)
 
