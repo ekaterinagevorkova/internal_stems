@@ -109,7 +109,7 @@ with col2:
 
     # -------------------- ГЕНЕРАТОР СЛАГОВ -------------------- #
     st.markdown("<h1 style='color:#28EBA4;'>СЛАГИ ДЛЯ ССЫЛОК</h3>", unsafe_allow_html=True)
-    words_raw = st.text_input("2–3 слова для слага (через пробел / запятую)", key="slug_words", placeholder="пример: гол статистика")
+    words_raw = st.text_input("2–3 слова для слага (через пробел / запятую)", key="slug_words", placeholder="")
     to_lower = st.checkbox("в нижнем регистре", value=True, key="slug_lower")
 
     if words_raw:
