@@ -17,7 +17,11 @@ with col1:
     st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТОР (PNG → WebP)</h1>", unsafe_allow_html=True)
     uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
     archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
-    
+
+    if uploaded_files:
+        converted_files = []
+        converted_filenames = []
+
     if uploaded_files:
         converted_files = []
         converted_filenames = []
