@@ -10,7 +10,7 @@ from itertools import product, permutations
 st.set_page_config(page_title="Internal tools", layout="wide")
 st.markdown(
     "<div style='text-align: center; margin-bottom: 20px;'>"
-    "<img src='https://https://dumpster.cdn.sports.ru/5/93/bf20303bae2833f0d522d4418ae64.png' width='80'>"
+    "<img src='https://dumpster.cdn.sports.ru/5/93/bf20303bae2833f0d522d4418ae64.png' width='80'>"
     "</div>",
     unsafe_allow_html=True
 )
