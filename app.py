@@ -7,60 +7,14 @@ import pandas as pd
 import re
 from itertools import product, permutations
 
+st.set_page_config(page_title="Internal tools", layout="wide")
+st.markdown(
+    "<div style='text-align: center; margin-bottom: 20px;'>"
+    "<img src='https://dumpster.cdn.sports.ru/7/f5/0180499259d7b11aaceee78e2b91e.png' width='80'>"
+    "</div>",
+    unsafe_allow_html=True
+)
 col1, col2 = st.columns(2)
-st.markdown("""
-<style>
-/* фон + текст */
-[data-testid="stAppViewContainer"] {
-  background-color: #0E1117 !important;
-  color: #FAFAFA !important;
-}
-[data-testid="stHeader"] { background: transparent !important; }
-[data-testid="stSidebar"] {
-  background-color: #0E1117 !important;
-  color: #FAFAFA !important;
-}
-
-/* заголовки мятные */
-h1, h2, h3, h4, h5, h6 {
-  color: #28EBA4 !important;
-}
-
-/* поля ввода и textarea серые */
-input, textarea {
-  color: #FAFAFA !important;
-  background-color: #2a2f3a !important;
-  border: 1px solid #444 !important;
-}
-
-/* radio, select и подписи к полям */
-.stRadio > label, .stSelectbox > label, label {
-  color: #FAFAFA !important;
-}
-.stRadio, .stSelectbox, select {
-  background-color: #2a2f3a !important;
-  color: #FAFAFA !important;
-}
-
-/* кнопки серые */
-.stDownloadButton > button,
-button[kind="primary"],
-button[kind="secondary"] {
-  background-color: #2a2f3a !important;
-  color: #FAFAFA !important;
-  border: 1px solid #555 !important;
-}
-.stDownloadButton > button:hover,
-button[kind="primary"]:hover,
-button[kind="secondary"]:hover {
-  background-color: #444 !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-
-
 
 # ==================== ЛЕВАЯ КОЛОНКА ==================== #
 with col1:
@@ -304,3 +258,4 @@ with col2:
             st.text_area("Варианты слагов", value=text_blob, height=200)
         else:
             st.caption("Введите от 2 до 3 слов.")
+
