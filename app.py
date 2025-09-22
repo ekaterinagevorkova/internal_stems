@@ -37,8 +37,34 @@ input, textarea { color:#FAFAFA !important; background-color:#11151c !important;
 </style>
 """, unsafe_allow_html=True)
 
-# колонки ДО использования
-col1, col2 = st.columns(2)
+st.markdown("""
+<style>
+/* инпуты и выпадающие списки */
+input, textarea, select, .stTextInput input, .stSelectbox div[data-baseweb="select"] > div {
+    background-color: #1E222A !important;  /* тёмно-серый фон */
+    color: #FAFAFA !important;             /* белый текст */
+    border: 1px solid #444 !important;
+}
+
+/* placeholder тоже белый */
+input::placeholder, textarea::placeholder {
+    color: #AAAAAA !important;
+}
+
+/* file uploader */
+[data-testid="stFileUploader"] section {
+    background-color: #1E222A !important;
+    color: #FAFAFA !important;
+    border: 1px dashed #444 !important;
+}
+
+/* select (выпадающий список) текст */
+.stSelectbox div[data-baseweb="select"] span {
+    color: #FAFAFA !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 
 # ==================== ЛЕВАЯ КОЛОНКА ==================== #
