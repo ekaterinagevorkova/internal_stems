@@ -129,7 +129,7 @@ with col1:
   <meta name="ad.size" content="width=100%,height=250px">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AdFox Banner</title>
-  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/9/58/782b7c244f327056e145d297c6f4b.css">
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/9/58/782b7c244f327056е145d297c6f4b.css">
 </head>
 <body>
   <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
@@ -174,26 +174,28 @@ with col2:
             return [v.strip() for v in value.split(" ") if v.strip()]
         return [value.strip()]
 
-   if link_type == "ref":
-    st.markdown("ref-параметры")
-    show_ref1 = st.checkbox("ref1", value=True, key="toggle_ref1")
+    if link_type == "ref":
+        st.markdown("ref-параметры")
 
-    # Базовый порядок полей: ref, (ref1), ref2, ref3, ref4
-    ref_order = ["ref"] + (["ref1"] if show_ref1 else []) + ["ref2", "ref3", "ref4"]
+        # чекбокс ref1: если включён — поле ref1 показывается; если выключён — вместо него появится ref5 внизу
+        show_ref1 = st.checkbox("ref1", value=True, key="toggle_ref1")
 
-    inputs = {}
-    for name in ref_order:
-        inputs[name] = st.text_input(name)
+        # Базовый порядок полей: ref, (ref1?), ref2, ref3, ref4
+        ref_order = ["ref"] + (["ref1"] if show_ref1 else []) + ["ref2", "ref3", "ref4"]
 
-    # Если ref1 отключен — вместо него добавляем ref5 внизу
-    if not show_ref1:
-        inputs["ref5"] = st.text_input("ref5")
+        inputs = {}
+        for name in ref_order:
+            inputs[name] = st.text_input(name)
 
-    # Под последним полем выводим подсказку
-    st.caption("можно вводить неограниченное значение параметров, отделяя через пробел")
+        # Если ref1 отключён — добавляем ref5 в самом низу
+        if not show_ref1:
+            inputs["ref5"] = st.text_input("ref5")
 
-    # Преобразуем в словарь списков значений (как и раньше)
-    parsed = {k: parse_multi(v) for k, v in inputs.items()}
+        # Под последним полем — подсказка
+        st.caption("можно вводить неограниченное значение параметров, отделяя через пробел")
+
+        # Преобразуем поля в списки значений
+        parsed = {k: parse_multi(v) for k, v in inputs.items()}
 
     else:
         st.markdown("utm-параметры")
@@ -213,12 +215,12 @@ with col2:
                 break
 
         combined = list(product(*[parsed[k] if parsed[k] else [""] for k in parsed]))
-        keys = list(parsed.keys())
+        keys_list = list(parsed.keys())
 
         for combo in combined:
-            params = "&".join([f"{k}={v}" for k, v in zip(keys, combo) if v])
+            params = "&".join([f"{k}={v}" for k, v in zip(keys_list, combo) if v])
             full_url = f"{base_url}?{params}" if params else base_url
-            value = combo[keys.index(varying_key)] if varying_key in keys else ""
+            value = combo[keys_list.index(varying_key)] if varying_key in keys_list else ""
             st.markdown(
                 f"<div style='display: flex; align-items: center; gap: 10px;'>"
                 f"<span style='color: #28EBA4; font-weight: bold; min-width: 60px'>{value}</span>"
