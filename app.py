@@ -29,7 +29,7 @@ h1, h2, h3, h4, h5, h6 {
 /* поля ввода и textarea серые */
 input, textarea {
   color: #FAFAFA !important;
-  background-color: #2a2f3a !important;
+  background-color: #0E1117 !important;
   border: 1px solid #444 !important;
 }
 
@@ -38,7 +38,7 @@ input, textarea {
   color: #FAFAFA !important;
 }
 .stRadio, .stSelectbox, select {
-  background-color: #2a2f3a !important;
+  background-color: #0E1117 !important;
   color: #FAFAFA !important;
 }
 
