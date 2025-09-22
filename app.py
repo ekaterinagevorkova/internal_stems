@@ -29,38 +29,35 @@ h1, h2, h3, h4, h5, h6 {
 /* поля ввода и textarea серые */
 input, textarea {
   color: #FAFAFA !important;
-  background-color: #0E1117 !important;
+  background-color: #2a2f3a !important;
   border: 1px solid #444 !important;
 }
 
-/* radio / select / checkbox */
-.stRadio label, .stSelectbox label, .stCheckbox label {
+/* radio, select и подписи к полям */
+.stRadio > label, .stSelectbox > label, label {
   color: #FAFAFA !important;
 }
-.stRadio, .stSelectbox, .stCheckbox, select {
-  background-color: #0E1117 !important;
+.stRadio, .stSelectbox, select {
+  background-color: #2a2f3a !important;
   color: #FAFAFA !important;
 }
 
-/* кнопки серые с белым текстом */
+/* кнопки серые */
 .stDownloadButton > button,
 button[kind="primary"],
-button[kind="secondary"],
-.stButton > button {
+button[kind="secondary"] {
   background-color: #2a2f3a !important;
   color: #FAFAFA !important;
   border: 1px solid #555 !important;
 }
 .stDownloadButton > button:hover,
 button[kind="primary"]:hover,
-button[kind="secondary"]:hover,
-.stButton > button:hover {
+button[kind="secondary"]:hover {
   background-color: #444 !important;
-  color: #FFFFFF !important;
-  border: 1px solid #888 !important;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
