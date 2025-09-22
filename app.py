@@ -18,19 +18,26 @@ st.markdown(
 )
 
 # Цвет фона
+# Цвет фона
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] { background-color:#0E1117 !important; color:#FAFAFA !important; }
 [data-testid="stHeader"]{ background:transparent !important; }
 [data-testid="stSidebar"]{ background-color:#0E1117 !important; color:#FAFAFA !important; }
-label, p, span, h1, h2, h3, h4, h5, h6 { color:#FAFAFA !important; }
+
+/* общий текст */
+label, p, span { color:#FAFAFA !important; }
+
+/* заголовки мятные */
+h1, h2, h3, h4, h5, h6 { color:#28EBA4 !important; }
+
 input, textarea { color:#FAFAFA !important; background-color:#11151c !important; border-color:#2a2f3a !important; }
 .stDownloadButton > button, button[kind="primary"], button[kind="secondary"] { background-color:#28EBA4 !important; color:#0E1117 !important; border-color:#28EBA4 !important; }
 .block-container { padding-top: 1rem; }
 </style>
 """, unsafe_allow_html=True)
 
-# ВАЖНО: создаём колонки ДО использования
+# колонки ДО использования
 col1, col2 = st.columns(2)
 
 
