@@ -20,9 +20,13 @@ col1, col2 = st.columns(2)
 # ==================== ЛЕВАЯ КОЛОНКА ==================== #
 with col1:
     # -------------------- КОНВЕРТОР (PNG -> WebP) -------------------- #
-    st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ (PNG → WebP)</h1>", unsafe_allow_html=True)
-    uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
-    archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
+    st.markdown(
+    "<h1 style='color:#28EBA4; text-align: right;'>КОНВЕРТАЦИЯ (PNG → WebP)</h1>",
+    unsafe_allow_html=True
+)
+uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
+archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
+
 
     if uploaded_files:
         converted_files = []
