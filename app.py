@@ -11,9 +11,18 @@ col1, col2 = st.columns(2)
 st.set_page_config(page_title="Internal tools", layout="wide")
 
 st.markdown(
-    "<div style='text-align: center; margin-bottom: 20px;'>"
-    "<img src='https://dumpster.cdn.sports.ru/7/f5/0180499259d7b11aaceee78e2b91e.png' width='80'>"
-    "</div>",
+    """
+    <div style='
+        text-align: center; 
+        position: fixed; 
+        top: 10px; 
+        left: 0; 
+        right: 0;
+        z-index: 999;
+    '>
+        <img src='https://dumpster.cdn.sports.ru/7/f5/0180499259d7b11aaceee78e2b91e.png' width='80'>
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
