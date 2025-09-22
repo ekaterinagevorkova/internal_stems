@@ -8,7 +8,12 @@ import re
 from itertools import product, permutations
 
 st.set_page_config(page_title="Internal tools", layout="wide")
-st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ (PNG → WebP)</h1>", unsafe_allow_html=True) uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True) archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
+st.markdown(
+    "<div style='text-align: center; margin-bottom: 20px;'>"
+    "<img src='https://dumpster.cdn.sports.ru/7/f5/0180499259d7b11aaceee78e2b91e.png' width='80'>"
+    "</div>",
+    unsafe_allow_html=True
+)
 col1, col2 = st.columns(2)
 
 # ==================== ЛЕВАЯ КОЛОНКА ==================== #
@@ -17,10 +22,6 @@ with col1:
     st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТОР (PNG → WebP)</h1>", unsafe_allow_html=True)
     uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
     archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
-
-    if uploaded_files:
-        converted_files = []
-        converted_filenames = []
 
     if uploaded_files:
         converted_files = []
@@ -51,7 +52,7 @@ with col1:
     # -------------------- КОНВЕРТАЦИЯ В HTML -------------------- #
     st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ В HTML</h1>", unsafe_allow_html=True)
 
-    # Шаблоны HTML 
+    # Шаблоны HTML с плейсхолдером
     templates = {
         "FullScreen (320x480)": """<!DOCTYPE html>
 <html lang="ru">
@@ -222,7 +223,7 @@ with col2:
 
     # -------------------- ГЕНЕРАТОР СЛАГОВ -------------------- #
     st.markdown("<h1 style='color:#28EBA4;'>СЛАГИ ДЛЯ ССЫЛОК</h1>", unsafe_allow_html=True)
-    words_raw = st.text_input("2–3 слова через пробел или запятую", key="slug_words", placeholder="")
+    words_raw = st.text_input("2–3 слова для слага (через пробел / запятую)", key="slug_words", placeholder="пример: гол статистика")
 
     if words_raw:
         # разбираем вход, приводим к нижнему регистру
@@ -236,5 +237,6 @@ with col2:
             slugs = sorted(combos, key=lambda s: (len(s), s))
             text_blob = "\n".join(slugs)
             st.text_area("Варианты слагов", value=text_blob, height=200)
+            st.download_button("Скачать .txt", data=text_blob.encode('utf-8'), file_name="slugs.txt", mime="text/plain")
         else:
             st.caption("Введите от 2 до 3 слов.")
