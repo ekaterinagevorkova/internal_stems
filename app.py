@@ -7,14 +7,32 @@ import pandas as pd
 import re
 from itertools import product, permutations
 
+col1, col2 = st.columns(2)
 st.set_page_config(page_title="Internal tools", layout="wide")
+
 st.markdown(
     "<div style='text-align: center; margin-bottom: 20px;'>"
     "<img src='https://dumpster.cdn.sports.ru/7/f5/0180499259d7b11aaceee78e2b91e.png' width='80'>"
     "</div>",
     unsafe_allow_html=True
 )
+
+# Цвет фона
+st.markdown("""
+<style>
+[data-testid="stAppViewContainer"] { background-color:#0E1117 !important; color:#FAFAFA !important; }
+[data-testid="stHeader"]{ background:transparent !important; }
+[data-testid="stSidebar"]{ background-color:#0E1117 !important; color:#FAFAFA !important; }
+label, p, span, h1, h2, h3, h4, h5, h6 { color:#FAFAFA !important; }
+input, textarea { color:#FAFAFA !important; background-color:#11151c !important; border-color:#2a2f3a !important; }
+.stDownloadButton > button, button[kind="primary"], button[kind="secondary"] { background-color:#28EBA4 !important; color:#0E1117 !important; border-color:#28EBA4 !important; }
+.block-container { padding-top: 1rem; }
+</style>
+""", unsafe_allow_html=True)
+
+# ВАЖНО: создаём колонки ДО использования
 col1, col2 = st.columns(2)
+
 
 # ==================== ЛЕВАЯ КОЛОНКА ==================== #
 with col1:
