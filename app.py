@@ -14,6 +14,21 @@ st.markdown(
     "</div>",
     unsafe_allow_html=True
 )
+st.markdown(
+    """
+    <style>
+        body {
+            background-color: #0E1117; /* тёмный фон */
+            color: #FAFAFA; /* светлый текст */
+        }
+        .stMarkdown, .stTextInput, .stDownloadButton, .stRadio, .stSelectbox, .stFileUploader {
+            color: #FAFAFA;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 col1, col2 = st.columns(2)
 
 # ==================== ЛЕВАЯ КОЛОНКА ==================== #
