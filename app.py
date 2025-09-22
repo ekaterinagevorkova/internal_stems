@@ -256,6 +256,5 @@ with col2:
             slugs = sorted(combos, key=lambda s: (len(s), s))
             text_blob = "\n".join(slugs)
             st.text_area("Варианты слагов", value=text_blob, height=200)
-            st.download_button("Скачать .txt", data=text_blob.encode('utf-8'), file_name="slugs.txt", mime="text/plain")
         else:
             st.caption("Введите от 2 до 3 слов.")
