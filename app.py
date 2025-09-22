@@ -174,10 +174,27 @@ with col2:
             return [v.strip() for v in value.split(" ") if v.strip()]
         return [value.strip()]
 
-    if link_type == "ref":
-        st.markdown("ref-параметры")
-        ref_inputs = [st.text_input(f"ref{i if i > 0 else ''}") for i in range(5)]
-        parsed = {f"ref{i if i > 0 else ''}": parse_multi(val) for i, val in enumerate(ref_inputs)}
+   if link_type == "ref":
+    st.markdown("ref-параметры")
+    show_ref1 = st.checkbox("ref1", value=True, key="toggle_ref1")
+
+    # Базовый порядок полей: ref, (ref1), ref2, ref3, ref4
+    ref_order = ["ref"] + (["ref1"] if show_ref1 else []) + ["ref2", "ref3", "ref4"]
+
+    inputs = {}
+    for name in ref_order:
+        inputs[name] = st.text_input(name)
+
+    # Если ref1 отключен — вместо него добавляем ref5 внизу
+    if not show_ref1:
+        inputs["ref5"] = st.text_input("ref5")
+
+    # Под последним полем выводим подсказку
+    st.caption("можно вводить неограниченное значение параметров, отделяя через пробел")
+
+    # Преобразуем в словарь списков значений (как и раньше)
+    parsed = {k: parse_multi(v) for k, v in inputs.items()}
+
     else:
         st.markdown("utm-параметры")
         keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
