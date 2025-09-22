@@ -8,13 +8,7 @@ import re
 from itertools import product, permutations
 
 st.set_page_config(page_title="Internal tools", layout="wide")
-st.markdown(
-    "<div style='text-align: center; margin-bottom: 20px;'>"
-    "<img src='https://dumpster.cdn.sports.ru/7/f5/0180499259d7b11aaceee78e2b91e.png' width='80'>"
-    "</div>",
-    unsafe_allow_html=True
-)
-
+st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ (PNG → WebP)</h1>", unsafe_allow_html=True) uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True) archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
 col1, col2 = st.columns(2)
 
 # ==================== ЛЕВАЯ КОЛОНКА ==================== #
