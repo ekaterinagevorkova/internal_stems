@@ -33,30 +33,35 @@ input, textarea {
   border: 1px solid #444 !important;
 }
 
-/* radio, select и подписи к полям */
-.stRadio > label, .stSelectbox > label, label {
+/* radio / select / checkbox */
+.stRadio label, .stSelectbox label, .stCheckbox label {
   color: #FAFAFA !important;
 }
-.stRadio, .stSelectbox, select {
+.stRadio, .stSelectbox, .stCheckbox, select {
   background-color: #0E1117 !important;
   color: #FAFAFA !important;
 }
 
-/* кнопки серые */
+/* кнопки серые с белым текстом */
 .stDownloadButton > button,
 button[kind="primary"],
-button[kind="secondary"] {
+button[kind="secondary"],
+.stButton > button {
   background-color: #2a2f3a !important;
   color: #FAFAFA !important;
   border: 1px solid #555 !important;
 }
 .stDownloadButton > button:hover,
 button[kind="primary"]:hover,
-button[kind="secondary"]:hover {
+button[kind="secondary"]:hover,
+.stButton > button:hover {
   background-color: #444 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #888 !important;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
