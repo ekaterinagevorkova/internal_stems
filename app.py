@@ -16,9 +16,9 @@ st.markdown(
 )
 col1, col2 = st.columns(2)
 
-# ==================== ЛЕВАЯ КОЛОНКА ==================== #
+#  ЛЕВАЯ КОЛОНКА #
 with col1:
-    # -------------------- КОНВЕРТОР (PNG -> WebP) -------------------- #
+    # КОНВЕРТОР (PNG -> WebP) #
     st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ (PNG → WebP)</h1>", unsafe_allow_html=True)
     uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
     archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
@@ -49,10 +49,10 @@ with col1:
             mime="application/zip"
         )
 
-    # -------------------- КОНВЕРТАЦИЯ В HTML -------------------- #
+    #  КОНВЕРТАЦИЯ В HTML #
     st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ В HTML</h1>", unsafe_allow_html=True)
 
-    # Шаблоны HTML с плейсхолдером
+    # Шаблоны HTML
     templates = {
         "FullScreen (320x480)": """<!DOCTYPE html>
 <html lang="ru">
@@ -156,9 +156,9 @@ with col1:
             mime="application/zip"
         )
 
-# ==================== ПРАВАЯ КОЛОНКА ==================== #
+#  ПРАВАЯ КОЛОНКА  #
 with col2:
-    # -------------------- ГЕНЕРАТОР ССЫЛОК -------------------- #
+    # ГЕНЕРАТОР ССЫЛОК #
     st.markdown("<h1 style='color:#28EBA4;'>ГЕНЕРАЦИЯ ССЫЛОК</h1>", unsafe_allow_html=True)
     base_url = st.text_input("Основная ссылка")
     link_type = st.radio("Тип параметров", ["ref", "utm"], horizontal=True)
@@ -177,21 +177,21 @@ with col2:
     if link_type == "ref":
         st.markdown("ref-параметры")
 
-        # чекбокс ref1: если включён — поле ref1 показывается; если выключён — вместо него появится ref5 внизу
+        # чекбокс ref1
         show_ref1 = st.checkbox("ref1", value=True, key="toggle_ref1")
 
-        # Базовый порядок полей: ref, (ref1?), ref2, ref3, ref4
+        # Базовый порядок полей: 
         ref_order = ["ref"] + (["ref1"] if show_ref1 else []) + ["ref2", "ref3", "ref4"]
 
         inputs = {}
         for name in ref_order:
             inputs[name] = st.text_input(name)
 
-        # Если ref1 отключён — добавляем ref5 в самом низу
+        # Если ref1 отключён 
         if not show_ref1:
             inputs["ref5"] = st.text_input("ref5")
 
-        # Под последним полем — подсказка
+        # подсказка (убрать потом?)
         st.caption("можно вводить неограниченное значение параметров, отделяя через пробел")
 
         # Преобразуем поля в списки значений
@@ -240,12 +240,12 @@ with col2:
         st.download_button("Скачать Excel", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
         st.download_button("Скачать CSV", data=csv_buf.getvalue(), file_name="ссылки.csv")
 
-    # -------------------- ГЕНЕРАТОР СЛАГОВ -------------------- #
+    #  ГЕНЕРАТОР СЛАГОВ #
     st.markdown("<h1 style='color:#28EBA4;'>СЛАГИ ДЛЯ ССЫЛОК</h1>", unsafe_allow_html=True)
     words_raw = st.text_input("2–3 слова через пробел или запятую", key="slug_words", placeholder="")
 
     if words_raw:
-        # разбираем вход, приводим к нижнему регистру
+        # разбираем вход + нижний регистр
         words = [w.lower() for w in re.split(r"[\s,]+", words_raw.strip()) if w]
         if 2 <= len(words) <= 3:
             seps = ['-', '_', '.']
