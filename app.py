@@ -105,8 +105,11 @@ def shortio_expand_get_id(domain: str, path: str, api_key: str):
     except requests.RequestException as e:
         return {"error": f"network error: {e}"}
 
-def shortio_stats_by_id(link_id: str, api_key: str):
-    """Статистика по ссылке через statistics.short.io/statistics/link/{id}."""
+def shortio_stats_total_clicks_by_id(link_id: str, api_key: str):
+    """
+    ВСЕГДА возвращаем totalClicks (все клики за всё время).
+    Если поле отсутствует — вернём 0, не подменяя другими метриками.
+    """
     headers = {"Accept": "application/json", "Authorization": api_key}
     url = f"https://statistics.short.io/statistics/link/{link_id}"
     try:
@@ -114,17 +117,19 @@ def shortio_stats_by_id(link_id: str, api_key: str):
         data = r.json() if r.headers.get("content-type","").startswith("application/json") else {}
         if r.status_code >= 400:
             return {"error": f"HTTP {r.status_code}", "details": data or r.text}
-        clicks = data.get("totalClicks") or data.get("clicks") or 0
-        return {"clicks": int(clicks)}
+        # строго totalClicks
+        total = data.get("totalClicks")
+        if total is None:
+            # не подменяем unique/period — возвратим 0, чтобы не путать метрики
+            total = 0
+        return {"totalClicks": int(total)}
     except requests.RequestException as e:
         return {"error": f"network error: {e}"}
 
-def shortio_get_link_clicks(url_str: str) -> int | str:
+def shortio_get_link_total_clicks(url_str: str) -> int | str:
     """
-    Возвращает total clicks для короткой ссылки.
-    1) парсим домен и path
-    2) получаем linkId через /links/expand
-    3) дергаем /statistics/link/{linkId}
+    Возвращает totalClicks (все клики за всё время) для короткой ссылки:
+    parse → /links/expand → /statistics/link/{id} (totalClicks).
     """
     try:
         parsed = urlparse(url_str)
@@ -142,10 +147,10 @@ def shortio_get_link_clicks(url_str: str) -> int | str:
         return f"expand: {expand_res['error']}"
     link_id = expand_res["id"]
 
-    stats_res = shortio_stats_by_id(link_id, preset["api_key"])
+    stats_res = shortio_stats_total_clicks_by_id(link_id, preset["api_key"])
     if "error" in stats_res:
         return f"stats: {stats_res['error']}"
-    return stats_res["clicks"]
+    return stats_res["totalClicks"]
 
 # ───────────────────────── UI ─────────────────────────────────────────
 def render_tools():
@@ -349,7 +354,7 @@ def render_tools():
 
         st.divider()
 
-        # ======= СТАТИСТИКА ССЫЛОК =======
+        # ======= СТАТИСТИКА ССЫЛОК (totalClicks) =======
         st.markdown("<h1 style='color:#28EBA4;'>СТАТИСТИКА ССЫЛОК</h1>", unsafe_allow_html=True)
 
         stats_input = st.text_area(
@@ -363,8 +368,8 @@ def render_tools():
                 urls = [u.strip() for u in stats_input.splitlines() if u.strip()]
                 stats_results = []
                 for url in urls:
-                    clicks = shortio_get_link_clicks(url)
-                    stats_results.append({"ссылка": url, "кол-во переходов Short": clicks})
+                    clicks_total = shortio_get_link_total_clicks(url)  # ВСЕГДА totalClicks
+                    stats_results.append({"ссылка": url, "кол-во переходов Short (total)": clicks_total})
                 if stats_results:
                     st.dataframe(pd.DataFrame(stats_results), use_container_width=True)
 
