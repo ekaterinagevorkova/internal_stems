@@ -71,7 +71,7 @@ def shortio_create_link(original_url: str, title: str | None, path: str | None, 
         return {"error": "Network/Request error", "details": str(e)}
 
 def generate_custom_slugs(words_str: str, need: int) -> list[str]:
-    """Из 2–3 слов собрать уникальные слаги с разделителями . - _; выдаём ровно 'need' штук (или меньше)."""
+    """Из 2–3 слов собрать уникальные слаги с разделителями . - _; выдаём до need штук."""
     words = [w.lower() for w in re.split(r"[\s,]+", words_str.strip()) if w]
     if not (2 <= len(words) <= 3):
         return []
@@ -80,7 +80,6 @@ def generate_custom_slugs(words_str: str, need: int) -> list[str]:
     for p in permutations(words):
         for sep in seps:
             combos.append(sep.join(p))
-    # сортируем стабильно: покороче — раньше, затем лексикографически
     combos = sorted(set(combos), key=lambda s: (len(s), s))
     return combos[:need]
 
@@ -140,16 +139,10 @@ def render_tools():
 
     # ─── ПРАВАЯ КОЛОНКА ─────────────────────────────────────────────────
     with col2:
-        # ======= ГЕНЕРАЦИЯ ССЫЛОК + SHORT.IO =======
-        st.markdown("<h1 style='color:#28EBA4;'>ГЕНЕРАЦИЯ И СОКРАЩЕНИЕ</h1>", unsafe_allow_html=True)
+        # ======= ГЕНЕРАЦИЯ ССЫЛОК + СОКРАЩЕНИЕ =======
+        st.markdown("<h1 style='color:#28EBA4;'>ГЕНЕРАЦИЯ ССЫЛОК</h1>", unsafe_allow_html=True)
 
-        # селектор домена Short.io (значения зашиты)
-        domain_label_list = list(SHORTIO_PRESETS.keys())
-        default_index = domain_label_list.index(DEFAULT_DOMAIN) if DEFAULT_DOMAIN in domain_label_list else 0
-        selected_domain_label = st.selectbox("Домен Short.io", domain_label_list, index=default_index)
-        active_preset = SHORTIO_PRESETS[selected_domain_label]
-
-        # генерация ссылок — прежняя логика
+        # поля генератора
         base_url = st.text_input("Основная ссылка")
         link_type = st.radio("Тип параметров", ["ref", "utm"], horizontal=True)
 
@@ -178,7 +171,8 @@ def render_tools():
             keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
             parsed = {key: parse_multi(st.text_input(key)) for key in keys}
 
-        generated = []  # список dict: {"title": ..., "url": ...}
+        # генерация ссылок (Title + исходная ссылка)
+        generated = []  # [{'title': ..., 'url': ...}, ...]
         varying_key = ""
 
         if base_url:
@@ -196,47 +190,41 @@ def render_tools():
                 params = "&".join([f"{k}={v}" for k, v in zip(keys_list, combo) if v])
                 full_url = f"{base_url}?{params}" if params else base_url
                 title_val = combo[keys_list.index(varying_key)] if varying_key in keys_list else ""
-                st.markdown(
-                    f"<div style='display:flex;align-items:center;gap:10px;'>"
-                    f"<span style='color:#28EBA4;font-weight:bold;min-width:60px'>{title_val}</span>"
-                    f"<code style='word-break:break-all'>{full_url}</code>"
-                    f"</div>",
-                    unsafe_allow_html=True
-                )
                 generated.append({"title": str(title_val), "url": full_url})
 
-        # выгрузка сгенерированных ссылок в Excel (CSV — нет)
+        # вывод генерации: ТАБЛИЦА из двух колонок
         if generated:
-            df_gen = pd.DataFrame([{"Формат": g["title"], "Ссылка": g["url"]} for g in generated])
-            excel_buf = io.BytesIO()
-            df_gen.to_excel(excel_buf, index=False)
-            st.download_button("Скачать Excel сгенерированных ссылок", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
+            df_gen = pd.DataFrame([{"Title": g["title"], "исходная ссылка": g["url"]} for g in generated])
+            st.dataframe(df_gen, use_container_width=True)
 
-            st.divider()
-            # блок сокращения
-            st.subheader("Сократить сгенерированные ссылки")
+        st.divider()
 
-            use_custom_slugs = st.checkbox("Кастомные слаги")
-            custom_words = ""
-            if use_custom_slugs:
-                custom_words = st.text_input("2–3 слова (для генерации слагов)")
+        # ======= СОКРАЩАТЕЛЬ (всегда на экране, относится к текущей генерации) =======
+        st.subheader("Сократить сгенерированные ссылки")
 
-            # поле опционального общего префикса к Title? — не просили, пропускаем
-            if st.button("🔗 Сократить ссылки"):
-                # подготовка слагов (если включено)
-                slugs = []
-                if use_custom_slugs:
-                    slugs = generate_custom_slugs(custom_words, need=len(generated))
-                # если слагов меньше, чем ссылок — лишние пойдут без кастомного path
-                # маппинг: i-я ссылка -> i-й слаг (или None)
+        use_custom_slugs = st.checkbox("Кастомные слаги")
+        custom_words = ""
+        if use_custom_slugs:
+            custom_words = st.text_input("2–3 слова (для генерации слагов)")
+
+        # домен Short.io — внизу блока
+        domain_label_list = list(SHORTIO_PRESETS.keys())
+        default_index = domain_label_list.index(DEFAULT_DOMAIN) if DEFAULT_DOMAIN in domain_label_list else 0
+        selected_domain_label = st.selectbox("Домен Short.io", domain_label_list, index=default_index)
+        active_preset = SHORTIO_PRESETS[selected_domain_label]
+
+        if st.button("🔗 Сократить ссылки"):
+            if not generated:
+                st.error("Сначала сгенерируйте ссылки.")
+            else:
+                slugs = generate_custom_slugs(custom_words, need=len(generated)) if use_custom_slugs else []
                 results = []
                 for idx, g in enumerate(generated):
                     path = slugs[idx] if idx < len(slugs) else None
-                    title = g["title"] or ""  # переносим тайтл из генератора в title шорта
+                    title = g["title"] or ""
                     res = shortio_create_link(original_url=g["url"], title=title, path=path, preset=active_preset)
                     if "error" in res:
                         st.error(f"Ошибка Short.io при «{g['url']}»: {res.get('error')}")
-                        # деталей API не показываем — по прежнему требованию
                         continue
                     short_url = res.get("shortURL") or res.get("shortUrl") or res.get("secureShortURL")
                     if not short_url:
@@ -244,7 +232,6 @@ def render_tools():
                         continue
                     results.append({"Title": title, "исходная ссылка": g["url"], "сокращенная ссылка": short_url})
 
-                # сохранить в историю
                 if "shortio_history" not in st.session_state:
                     st.session_state.shortio_history = []
                 st.session_state.shortio_history.extend(results)
@@ -284,6 +271,7 @@ if not st.session_state.get("authenticated"):
 
 # Авторизован — рисуем инструменты
 render_tools()
+
 
 
 
