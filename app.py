@@ -19,7 +19,7 @@ PASSWORD = st.secrets.get("password", FALLBACK_PASSWORD)
 # === SHORT.IO ===
 # Ключи по умолчанию берём из st.secrets:
 # st.secrets["shortio_api_key"], st.secrets["shortio_domain_id"]
-SHORTIO_API_KEY = st.secrets.get("pk_BQvDh47Q5QtPlXGX", "PUT_YOUR_SHORTIO_API_KEY")
+SHORTIO_API_KEY = st.secrets.get("pk_fQ14K5ZUMA15vhSj", "PUT_YOUR_SHORTIO_API_KEY")
 SHORTIO_DOMAIN_ID = st.secrets.get("216771", "PUT_YOUR_DOMAIN_ID")
 
 # СТРАНИЦА ИНСТРУМЕНТОВ (без set_page_config)
