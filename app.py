@@ -1,11 +1,4 @@
-import streamlit as st
-import zipfile
-from PIL import Image
-import io
-import base64
-import pandas as pd
-import re
-from itertools import product, permutations
+
 
 # app.py
 import streamlit as st
@@ -38,6 +31,13 @@ if go:
     else:
         st.error("Неверный пароль")
 
+# pages/01_tools.py
+import streamlit as st
+import io, zipfile, re
+from PIL import Image
+import pandas as pd
+from itertools import product, permutations
+
 # 🔒 Гард: если не авторизован — назад на логин
 if not st.session_state.get("authenticated"):
     st.warning("Нет доступа. Пожалуйста, авторизуйтесь.")
@@ -45,6 +45,7 @@ if not st.session_state.get("authenticated"):
         st.switch_page("app.py")
     st.stop()
 
+# ===== ниже — ваш существующий код =====
 st.set_page_config(page_title="Internal tools", layout="wide")
 st.markdown(
     "<div style='text-align: center; margin-bottom: 20px;'>"
@@ -56,7 +57,7 @@ col1, col2 = st.columns(2)
 
 #  ЛЕВАЯ КОЛОНКА #
 with col1:
-    # КОНВЕРТОР (PNG -> WebP) #
+    # КОНВЕРТОР (PNG -> WebP)
     st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ (PNG → WebP)</h1>", unsafe_allow_html=True)
     uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
     archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
@@ -87,10 +88,9 @@ with col1:
             mime="application/zip"
         )
 
-    #  КОНВЕРТАЦИЯ В HTML #
+    #  КОНВЕРТАЦИЯ В HTML
     st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ В HTML</h1>", unsafe_allow_html=True)
 
-    # Шаблоны HTML
     templates = {
         "FullScreen (320x480)": """<!DOCTYPE html>
 <html lang="ru">
@@ -194,9 +194,9 @@ with col1:
             mime="application/zip"
         )
 
-#  ПРАВАЯ КОЛОНКА  #
+#  ПРАВАЯ КОЛОНКА
 with col2:
-    # ГЕНЕРАТОР ССЫЛОК #
+    # ГЕНЕРАЦИЯ ССЫЛОК
     st.markdown("<h1 style='color:#28EBA4;'>ГЕНЕРАЦИЯ ССЫЛОК</h1>", unsafe_allow_html=True)
     base_url = st.text_input("Основная ссылка")
     link_type = st.radio("Тип параметров", ["ref", "utm"], horizontal=True)
@@ -215,24 +215,19 @@ with col2:
     if link_type == "ref":
         st.markdown("ref-параметры")
 
-        # чекбокс ref1
         show_ref1 = st.checkbox("ref1", value=True, key="toggle_ref1")
 
-        # Базовый порядок полей: 
         ref_order = ["ref"] + (["ref1"] if show_ref1 else []) + ["ref2", "ref3", "ref4"]
 
         inputs = {}
         for name in ref_order:
             inputs[name] = st.text_input(name)
 
-        # Если ref1 отключён 
         if not show_ref1:
             inputs["ref5"] = st.text_input("ref5")
 
-        # подсказка (убрать потом?)
         st.caption("можно вводить неограниченное значение параметров, отделяя через пробел")
 
-        # Преобразуем поля в списки значений
         parsed = {k: parse_multi(v) for k, v in inputs.items()}
 
     else:
@@ -278,12 +273,11 @@ with col2:
         st.download_button("Скачать Excel", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
         st.download_button("Скачать CSV", data=csv_buf.getvalue(), file_name="ссылки.csv")
 
-    #  ГЕНЕРАТОР СЛАГОВ #
+    #  ГЕНЕРАТОР СЛАГОВ
     st.markdown("<h1 style='color:#28EBA4;'>СЛАГИ ДЛЯ ССЫЛОК</h1>", unsafe_allow_html=True)
     words_raw = st.text_input("2–3 слова через пробел или запятую", key="slug_words", placeholder="")
 
     if words_raw:
-        # разбираем вход + нижний регистр
         words = [w.lower() for w in re.split(r"[\s,]+", words_raw.strip()) if w]
         if 2 <= len(words) <= 3:
             seps = ['-', '_', '.']
@@ -296,5 +290,6 @@ with col2:
             st.text_area("Варианты слагов", value=text_blob, height=200)
         else:
             st.caption("Введите от 2 до 3 слов.")
+
 
 
