@@ -7,24 +7,43 @@ import pandas as pd
 import re
 from itertools import product, permutations
 
-# "секрет" можно вынести в st.secrets или .env
-PASSWORD = "12345"
+# app.py
+import streamlit as st
 
-# Проверка пароля в сессии
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
+st.set_page_config(page_title="Internal tools • Login", layout="centered")
 
-if not st.session_state["authenticated"]:
-    pwd = st.text_input("Введите пароль:", type="password")
-    if st.button("Войти"):
-        if pwd == PASSWORD:
-            st.session_state["authenticated"] = True
-            st.rerun()
-        else:
-            st.error("Неверный пароль")
-else:
-    st.success("Доступ разрешён ✅")
-    st.write("Здесь уже контент страницы...")
+# Простой общий пароль 
+PASSWORD = "Spots"
+
+# Если уже авторизован — сразу шлём на основную страницу
+if st.session_state.get("authenticated"):
+    st.switch_page("pages/01_tools.py")
+
+st.markdown(
+    "<div style='text-align:center;margin:40px 0 20px;'>"
+    "<img src='https://dumpster.cdn.sports.ru/5/93/bf20303bae2833f0d522d4418ae64.png' width='96'>"
+    "</div>",
+    unsafe_allow_html=True
+)
+st.markdown("<h2 style='text-align:center;color:#28EBA4;'>Internal tools — вход</h2>", unsafe_allow_html=True)
+
+pwd = st.text_input("Введите пароль", type="password")
+go = st.button("Войти")
+
+if go:
+    if pwd == PASSWORD:  # или st.secrets["password"]
+        st.session_state["authenticated"] = True
+        st.success("Доступ разрешён ✅ ")
+        st.switch_page("pages/01_tools.py")
+    else:
+        st.error("Неверный пароль")
+
+# 🔒 Гард: если не авторизован — назад на логин
+if not st.session_state.get("authenticated"):
+    st.warning("Нет доступа. Пожалуйста, авторизуйтесь.")
+    if st.button("Перейти на страницу входа"):
+        st.switch_page("app.py")
+    st.stop()
 
 st.set_page_config(page_title="Internal tools", layout="wide")
 st.markdown(
