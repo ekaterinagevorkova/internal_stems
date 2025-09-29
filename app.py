@@ -199,8 +199,8 @@ def render_tools():
 
         st.divider()
 
-        # ======= СОКРАЩАТЕЛЬ (всегда на экране, относится к текущей генерации) =======
-        st.subheader("Сократить сгенерированные ссылки")
+        # ======= СОКРАЩАТЕЛЬ (всегда на экране) =======
+        st.markdown("<h1 style='color:#28EBA4;'>СОКРАЩЕНИЕ ССЫЛОК: Short</h1>", unsafe_allow_html=True)
 
         use_custom_slugs = st.checkbox("Кастомные слаги")
         custom_words = ""
@@ -213,12 +213,14 @@ def render_tools():
         selected_domain_label = st.selectbox("Домен Short.io", domain_label_list, index=default_index)
         active_preset = SHORTIO_PRESETS[selected_domain_label]
 
-        # состояние для fallback-сценария
+        # состояние для fallback-сценария (поля без заголовка)
         if "manual_shorten_active" not in st.session_state:
             st.session_state.manual_shorten_active = False
 
         # Кнопка сократить
         shorten_clicked = st.button("🔗 Сократить ссылки")
+        # подсказка под кнопкой
+        st.caption("сократить ref/utm-ссылки ИЛИ ввести новую")
 
         # Ветвление по сценариям
         if shorten_clicked:
@@ -243,12 +245,11 @@ def render_tools():
                         st.session_state.shortio_history = []
                     st.session_state.shortio_history.extend(results)
             else:
-                # FALLBACK: показать поля для ручного ввода
+                # FALLBACK: показать поля для ручного ввода (без заголовка)
                 st.session_state.manual_shorten_active = True
 
-        # Ручной режим после клика «Сократить ссылки» без сгенерированных ссылок
+        # Ручной режим (без заголовка)
         if st.session_state.manual_shorten_active and not generated:
-            st.markdown("##### Быстрое сокращение без генератора")
             manual_url = st.text_input("Ссылка", key="manual_url")
             manual_count = st.number_input("Количество", min_value=1, max_value=1000, value=1, step=1, key="manual_count")
 
@@ -257,12 +258,10 @@ def render_tools():
                 if not manual_url:
                     st.error("Укажите ссылку.")
                 else:
-                    # готовим «виртуально сгенерированный» список
                     virtual = [{"title": "", "url": manual_url.strip()} for _ in range(int(manual_count))]
                     slugs = generate_custom_slugs(custom_words, need=len(virtual)) if use_custom_slugs else []
                     results = []
                     for idx, g in enumerate(virtual):
-                        # если есть слаг — используем его и как path, и как title
                         slug = slugs[idx] if idx < len(slugs) else None
                         title = slug or ""
                         res = shortio_create_link(original_url=g["url"], title=title, path=slug, preset=active_preset)
@@ -278,7 +277,6 @@ def render_tools():
                         if "shortio_history" not in st.session_state:
                             st.session_state.shortio_history = []
                         st.session_state.shortio_history.extend(results)
-                        # сворачиваем ручной режим после успешного запуска
                         st.session_state.manual_shorten_active = False
 
         # История — три колонки, Excel, без CSV
@@ -316,6 +314,7 @@ if not st.session_state.get("authenticated"):
 
 # Авторизован — рисуем инструменты
 render_tools()
+
 
 
 
