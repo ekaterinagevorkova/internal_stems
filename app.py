@@ -291,7 +291,7 @@ if not st.session_state.get("authenticated"):
         "</div>",
         unsafe_allow_html=True
     )
-    st.markdown("<h2 style='text-align:center;color:#28EBA4;'>Internal tools — вход</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center;color:#28EBA4;'>Internal tools. Entrance</h2>", unsafe_allow_html=True)
     pwd = st.text_input("Введите пароль", type="password")
     if st.button("Войти"):
         if pwd == PASSWORD:
