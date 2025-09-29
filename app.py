@@ -324,33 +324,66 @@ def render_tools():
         # ======= СТАТИСТИКА ССЫЛОК =======
         st.markdown("<h1 style='color:#28EBA4;'>СТАТИСТИКА ССЫЛОК</h1>", unsafe_allow_html=True)
 
-        stats_input = st.text_area(
-            "Вставьте короткие ссылки (по одной на строке)",
-            placeholder="https://sprts.cc/abc123\nhttps://sirena.world/test"
-        )
-        if st.button("📊 Получить статистику"):
-            if not stats_input.strip():
-                st.error("Введите хотя бы одну ссылку")
-            else:
-                urls = [u.strip() for u in stats_input.splitlines() if u.strip()]
-                stats_results = []
-                for url in urls:
-                    try:
-                        parsed = urlparse(url)
-                        domain = parsed.netloc
-                        path = parsed.path  # напр. "/abc123"
-                        if domain.startswith("www."):
-                            domain = domain[4:]
-                        preset = SHORTIO_PRESETS.get(domain)
-                        if not preset:
-                            stats_results.append({"ссылка": url, "кол-во переходов Short": "Домен не из пресетов"})
-                            continue
-                        clicks = shortio_get_link_clicks_by_path(preset, path)
-                        stats_results.append({"ссылка": url, "кол-во переходов Short": clicks})
-                    except Exception as e:
-                        stats_results.append({"ссылка": url, "кол-во переходов Short": f"Ошибка: {e}"})
-                if stats_results:
-                    st.dataframe(pd.DataFrame(stats_results), use_container_width=True)
+       from urllib.parse import urlparse
+
+def shortio_get_link_id_by_domain_and_path(domain: str, path: str, preset: dict):
+    """Возвращает linkId по домену и path через /links/expand."""
+    api_key = preset["api_key"].strip()
+    headers = {"Accept": "application/json", "Authorization": api_key}
+    clean_path = path.strip().strip("/")
+    if not clean_path:
+        return {"error": "empty path"}
+
+    url = "https://api.short.io/links/expand"
+    params = {"domain": domain, "path": clean_path}
+    try:
+        r = requests.get(url, headers=headers, params=params, timeout=20)
+        data = r.json()
+        if r.status_code >= 400:
+            return {"error": f"HTTP {r.status_code}", "details": data}
+        link_id = data.get("id") or data.get("_id")
+        if not link_id:
+            return {"error": "link id not found in response", "details": data}
+        return {"id": link_id}
+    except requests.RequestException as e:
+        return {"error": f"network error: {e}"}
+
+def shortio_get_link_clicks(url_str: str) -> int | str:
+    """
+    Возвращает total clicks для короткой ссылки.
+    1) парсим домен и path
+    2) получаем linkId через /links/expand
+    3) дергаем /statistics/link/{linkId}
+    """
+    parsed = urlparse(url_str)
+    domain = parsed.netloc.lstrip("www.")
+    path = parsed.path
+
+    preset = SHORTIO_PRESETS.get(domain)
+    if not preset:
+        return "Домен не из пресетов"
+
+    # 1) id по path
+    link_id_res = shortio_get_link_id_by_domain_and_path(domain, path, preset)
+    if "error" in link_id_res:
+        return f"Ошибка expand: {link_id_res['error']}"
+
+    link_id = link_id_res["id"]
+
+    # 2) статистика по id
+    api_key = preset["api_key"].strip()
+    headers = {"Accept": "application/json", "Authorization": api_key}
+    stats_url = f"https://statistics.short.io/statistics/link/{link_id}"
+    try:
+        r = requests.get(stats_url, headers=headers, timeout=20)
+        data = r.json()
+        if r.status_code >= 400:
+            return f"HTTP {r.status_code}: {data.get('message') or data}"
+        clicks = data.get("totalClicks") or data.get("clicks") or 0
+        return int(clicks)
+    except requests.RequestException as e:
+        return f"Network error: {e}"
+
 
     # кнопка «Выйти»
     st.divider()
