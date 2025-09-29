@@ -14,7 +14,7 @@ import requests
 st.set_page_config(page_title="Internal tools", layout="wide")
 
 # Пароль
-FALLBACK_PASSWORD = "12345"
+FALLBACK_PASSWORD = "SportsTeam"
 PASSWORD = st.secrets.get("password", FALLBACK_PASSWORD)
 
 # ───────────────────────── SHORT.IO ПРЕСЕТЫ ───────────────────────────
