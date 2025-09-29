@@ -3,6 +3,7 @@ import io
 import zipfile
 import re
 from itertools import product, permutations
+from urllib.parse import urlparse
 
 import pandas as pd
 from PIL import Image
@@ -17,6 +18,7 @@ FALLBACK_PASSWORD = "12345"
 PASSWORD = st.secrets.get("password", FALLBACK_PASSWORD)
 
 # ───────────────────────── SHORT.IO ПРЕСЕТЫ ───────────────────────────
+# Пользователь выбирает домен, а ключ/ID/домен подставляются автоматически
 SHORTIO_PRESETS = {
     "sirena.world": {
         "api_key":   "sk_ROGCu7fwKkYVRz5V",
@@ -83,6 +85,40 @@ def generate_custom_slugs(words_str: str, need: int) -> list[str]:
     combos = sorted(set(combos), key=lambda s: (len(s), s))
     return combos[:need]
 
+def shortio_get_link_clicks_by_path(preset: dict, path: str) -> int | str:
+    """Возвращает общее число кликов по ссылке (по path в домене). На ошибке — текст ошибки."""
+    api_key = preset["api_key"].strip()
+    domain_id = preset["domain_id"]
+    headers = {"Accept": "application/json", "Authorization": api_key}
+
+    # Удалим ведущие/замыкающие слэши у path
+    clean_path = path.strip().strip("/")
+    if clean_path == "":
+        return "Ошибка: пустой path"
+
+    # Эндпоинт статистики по ссылке для конкретного домена/пути
+    url = f"https://api.short.io/statistics/domain/{domain_id}/link/{clean_path}"
+    try:
+        r = requests.get(url, headers=headers, timeout=20)
+        try:
+            data = r.json()
+        except Exception:
+            return f"HTTP {r.status_code}: не JSON"
+        if r.status_code >= 400:
+            # Попробуем извлечь message/код
+            msg = data.get("message") or data
+            return f"HTTP {r.status_code}: {msg}"
+        # Возможные поля с кликами (страхуемся)
+        clicks = data.get("totalClicks")
+        if clicks is None:
+            clicks = data.get("clicks")
+        if clicks is None:
+            # Бывает, что отдают массивы/агрегации — в простом варианте считаем 0
+            clicks = 0
+        return int(clicks)
+    except requests.RequestException as e:
+        return f"Network error: {e}"
+
 # ───────────────────────── UI ─────────────────────────────────────────
 def render_tools():
     st.markdown(
@@ -139,7 +175,7 @@ def render_tools():
 
     # ─── ПРАВАЯ КОЛОНКА ─────────────────────────────────────────────────
     with col2:
-        # ======= ГЕНЕРАЦИЯ ССЫЛОК + СОКРАЩЕНИЕ =======
+        # ======= ГЕНЕРАЦИЯ ССЫЛОК =======
         st.markdown("<h1 style='color:#28EBA4;'>ГЕНЕРАЦИЯ ССЫЛОК</h1>", unsafe_allow_html=True)
 
         # поля генератора
@@ -199,7 +235,7 @@ def render_tools():
 
         st.divider()
 
-        # ======= СОКРАЩАТЕЛЬ (всегда на экране) =======
+        # ======= СОКРАЩЕНИЕ ССЫЛОК: Short =======
         st.markdown("<h1 style='color:#28EBA4;'>СОКРАЩЕНИЕ ССЫЛОК: Short</h1>", unsafe_allow_html=True)
 
         use_custom_slugs = st.checkbox("Кастомные слаги")
@@ -207,25 +243,22 @@ def render_tools():
         if use_custom_slugs:
             custom_words = st.text_input("2–3 слова (для генерации слагов)")
 
-        # домен Short.io — внизу блока
+        # Домен Short.io — внизу блока
         domain_label_list = list(SHORTIO_PRESETS.keys())
         default_index = domain_label_list.index(DEFAULT_DOMAIN) if DEFAULT_DOMAIN in domain_label_list else 0
         selected_domain_label = st.selectbox("Домен Short.io", domain_label_list, index=default_index)
         active_preset = SHORTIO_PRESETS[selected_domain_label]
 
-        # состояние для fallback-сценария (поля без заголовка)
+        # состояние для ручного режима (без заголовка)
         if "manual_shorten_active" not in st.session_state:
             st.session_state.manual_shorten_active = False
 
-        # Кнопка сократить
         shorten_clicked = st.button("🔗 Сократить ссылки")
-        # подсказка под кнопкой
         st.caption("сократить ref/utm-ссылки ИЛИ ввести новую")
 
-        # Ветвление по сценариям
         if shorten_clicked:
             if generated:
-                # обычный сценарий — сокращаем то, что сгенерировано
+                # сокращаем текущую генерацию
                 slugs = generate_custom_slugs(custom_words, need=len(generated)) if use_custom_slugs else []
                 results = []
                 for idx, g in enumerate(generated):
@@ -245,15 +278,13 @@ def render_tools():
                         st.session_state.shortio_history = []
                     st.session_state.shortio_history.extend(results)
             else:
-                # FALLBACK: показать поля для ручного ввода (без заголовка)
+                # ручной режим (без заголовка)
                 st.session_state.manual_shorten_active = True
 
-        # Ручной режим (без заголовка)
         if st.session_state.manual_shorten_active and not generated:
             manual_url = st.text_input("Ссылка", key="manual_url")
             manual_count = st.number_input("Количество", min_value=1, max_value=1000, value=1, step=1, key="manual_count")
 
-            # кнопка запуска ручного сокращения
             if st.button("Создать сокращённые ссылки"):
                 if not manual_url:
                     st.error("Укажите ссылку.")
@@ -288,6 +319,39 @@ def render_tools():
             hist_df.to_excel(excel_buf2, index=False)
             st.download_button("⬇️ Скачать историю (Excel)", data=excel_buf2.getvalue(), file_name="shortio_history.xlsx")
 
+        st.divider()
+
+        # ======= СТАТИСТИКА ССЫЛОК =======
+        st.markdown("<h1 style='color:#28EBA4;'>СТАТИСТИКА ССЫЛОК</h1>", unsafe_allow_html=True)
+
+        stats_input = st.text_area(
+            "Вставьте короткие ссылки (по одной на строке)",
+            placeholder="https://sprts.cc/abc123\nhttps://sirena.world/test"
+        )
+        if st.button("📊 Получить статистику"):
+            if not stats_input.strip():
+                st.error("Введите хотя бы одну ссылку")
+            else:
+                urls = [u.strip() for u in stats_input.splitlines() if u.strip()]
+                stats_results = []
+                for url in urls:
+                    try:
+                        parsed = urlparse(url)
+                        domain = parsed.netloc
+                        path = parsed.path  # напр. "/abc123"
+                        if domain.startswith("www."):
+                            domain = domain[4:]
+                        preset = SHORTIO_PRESETS.get(domain)
+                        if not preset:
+                            stats_results.append({"ссылка": url, "кол-во переходов Short": "Домен не из пресетов"})
+                            continue
+                        clicks = shortio_get_link_clicks_by_path(preset, path)
+                        stats_results.append({"ссылка": url, "кол-во переходов Short": clicks})
+                    except Exception as e:
+                        stats_results.append({"ссылка": url, "кол-во переходов Short": f"Ошибка: {e}"})
+                if stats_results:
+                    st.dataframe(pd.DataFrame(stats_results), use_container_width=True)
+
     # кнопка «Выйти»
     st.divider()
     if st.button("Выйти"):
@@ -314,6 +378,7 @@ if not st.session_state.get("authenticated"):
 
 # Авторизован — рисуем инструменты
 render_tools()
+
 
 
 
