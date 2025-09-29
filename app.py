@@ -13,7 +13,7 @@ import streamlit as st
 st.set_page_config(page_title="Internal tools • Login", layout="centered")
 
 # Простой общий пароль 
-PASSWORD = "Spots"
+PASSWORD = "Sports"
 
 # Если уже авторизован — сразу шлём на основную страницу
 if st.session_state.get("authenticated"):
