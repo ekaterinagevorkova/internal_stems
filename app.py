@@ -19,7 +19,7 @@ PASSWORD = st.secrets.get("password", FALLBACK_PASSWORD)
 # === SHORT.IO СЕКРЕТЫ ===
 # Базовые дефолты
 SHORTIO_DEFAULT_API_KEY = st.secrets.get("shortio_api_key", "PUT_YOUR_SHORTIO_API_KEY")
-SHORTIO_DOMAIN_ID = st.secrets.get("shortio_domain_id", "PUT_YOUR_DOMAIN_ID")
+SHORTIO_DOMAIN_ID = st.secrets.get("216771", "PUT_YOUR_DOMAIN_ID")
 
 # Маппинг "email -> персональный API key", чтобы отправлять запросы от лица конкретных пользователей
 # Пример в .streamlit/secrets.toml:
