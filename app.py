@@ -16,18 +16,6 @@ st.set_page_config(page_title="Internal tools", layout="wide")
 FALLBACK_PASSWORD = "12345"
 PASSWORD = st.secrets.get("password", FALLBACK_PASSWORD)
 
-# === SHORT.IO СЕКРЕТЫ ===
-# Базовые дефолты
-SHORTIO_DEFAULT_API_KEY = st.secrets.get("shortio_api_key", "PUT_YOUR_SHORTIO_API_KEY")
-SHORTIO_DOMAIN_ID = st.secrets.get("216771", "PUT_YOUR_DOMAIN_ID")
-
-# Маппинг "email -> персональный API key", чтобы отправлять запросы от лица конкретных пользователей
-# Пример в .streamlit/secrets.toml:
-# [shortio_user_keys]
-# "e.gevorkova@sports.ru" = "SECRET_KEY_FOR_ELENA"
-# "other@sports.ru" = "SECRET_KEY_FOR_OTHER"
-SHORTIO_USER_KEYS = st.secrets.get("shortio_user_keys", {})  # dict
-
 def render_tools():
     st.markdown(
         "<div style='text-align: center; margin-bottom: 20px;'>"
