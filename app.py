@@ -1,12 +1,10 @@
-
-
 # app.py
 import streamlit as st
 
 st.set_page_config(page_title="Internal tools • Login", layout="centered")
 
-# Простой общий пароль 
-PASSWORD = "Sports"
+# ✳️ Простой общий пароль (можете вынести в st.secrets["password"])
+PASSWORD = "12345"
 
 # Если уже авторизован — сразу шлём на основную страницу
 if st.session_state.get("authenticated"):
@@ -26,11 +24,10 @@ go = st.button("Войти")
 if go:
     if pwd == PASSWORD:  # или st.secrets["password"]
         st.session_state["authenticated"] = True
-        st.success("Доступ разрешён ✅ ")
+        st.success("Доступ разрешён ✅ Перенаправляю…")
         st.switch_page("pages/01_tools.py")
     else:
         st.error("Неверный пароль")
-
 # pages/01_tools.py
 import streamlit as st
 import io, zipfile, re
@@ -290,6 +287,9 @@ with col2:
             st.text_area("Варианты слагов", value=text_blob, height=200)
         else:
             st.caption("Введите от 2 до 3 слов.")
+
+
+
 
 
 
