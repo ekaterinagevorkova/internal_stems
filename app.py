@@ -17,7 +17,6 @@ FALLBACK_PASSWORD = "12345"
 PASSWORD = st.secrets.get("password", FALLBACK_PASSWORD)
 
 # ───────────────────────── SHORT.IO ПРЕСЕТЫ ───────────────────────────
-# Пользователь выбирает только домен — всё остальное подставляется автоматически.
 SHORTIO_PRESETS = {
     "sirena.world": {
         "api_key":   "sk_ROGCu7fwKkYVRz5V",
@@ -146,7 +145,7 @@ def render_tools():
   <meta name="ad.size" content="width=100%,height=250px">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AdFox Banner</title>
-  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/9/58/782b7c244f327056е145d297c6f4б.css">
+  <link rel="stylesheet" href="https://dumpстер.cdn.sports.ru/9/58/782b7c244f327056е145д297c6f4б.css">
 </head>
 <body>
   <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
@@ -228,35 +227,29 @@ def render_tools():
 
         if all_results:
             df = pd.DataFrame(all_results)
-            excel_buf, csv_buf = io.BytesIO(), io.StringIO()
+            excel_buf = io.BytesIO()
             df.to_excel(excel_buf, index=False)
-            df.to_csv(csv_buf, index=False)
             st.download_button("Скачать Excel", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
-            st.download_button("Скачать CSV", data=csv_buf.getvalue(), file_name="ссылки.csv")
 
         # === SHORT.IO — СОКРАЩЕНИЕ =====================================
         st.markdown("<h1 style='color:#28EBA4;'>SHORT.IO — СОКРАЩЕНИЕ</h1>", unsafe_allow_html=True)
 
-        # Только один видимый контрол — выбор домена из двух пресетов
+        # единственный видимый контрол — выбор домена
         domain_label_list = list(SHORTIO_PRESETS.keys())
         default_index = domain_label_list.index(DEFAULT_DOMAIN) if DEFAULT_DOMAIN in domain_label_list else 0
         selected_domain_label = st.selectbox("Домен Short.io", domain_label_list, index=default_index)
 
-        # Конфиг для выбранного домена
         active_preset = SHORTIO_PRESETS[selected_domain_label]
         api_key   = active_preset["api_key"]
         domain_id = active_preset["domain_id"]
         domain    = active_preset["domain"]
 
-        st.caption(f"Выбран домен: **{domain}**")
-
-        st.caption("Введите длинную ссылку и (опционально) слаг/заголовок.")
         long_url_shortio = st.text_input("Длинная ссылка для Short.io", key="shortio_long_url")
         custom_path = st.text_input("Кастомный слаг (path), опционально", key="shortio_path", placeholder="naprimer-akciya-001")
         link_title = st.text_input("Заголовок (title), опционально", key="shortio_title")
 
         if "shortio_history" not in st.session_state:
-            st.session_state.shortio_history = []
+            st.session_state.shortio_history = []  # будет хранить dict с нужными 3 колонками
 
         def create_short_link(original_url, path=None, title=None, api_key=None, domain_id=None, domain_str=None):
             api_key = (api_key or "").strip()
@@ -320,44 +313,24 @@ def render_tools():
                     short_url = result.get("shortURL") or result.get("shortUrl") or result.get("secureShortURL")
                     if short_url:
                         st.success(f"Короткая ссылка: {short_url}")
-                        st.write("Ответ API:")
-                        st.json(result)
+                        # добавляем в историю 3 колонки: Title / исходная / сокращенная
                         st.session_state.shortio_history.append({
-                            "Длинная": long_url_shortio.strip(),
-                            "Короткая": short_url,
-                            "Path": custom_path or result.get("path", ""),
                             "Title": link_title or result.get("title", ""),
-                            "Domain": domain,
+                            "исходная ссылка": long_url_shortio.strip(),
+                            "сокращенная ссылка": short_url,
                         })
                     else:
-                        st.warning("Запрос успешен, но поле shortURL не найдено. Смотрите RAW JSON.")
-                        st.json(result)
+                        st.warning("Запрос успешен, но поле shortURL не найдено.")
 
+        # История — только 3 колонки + Excel, без CSV
         if st.session_state.shortio_history:
             st.markdown("#### История Short.io (текущая сессия)")
-            hist_df = pd.DataFrame(st.session_state.shortio_history)
+            hist_df = pd.DataFrame(st.session_state.shortio_history)[["Title", "исходная ссылка", "сокращенная ссылка"]]
             st.dataframe(hist_df, use_container_width=True)
-            excel_buf2, csv_buf2 = io.BytesIO(), io.StringIO()
-            hist_df.to_excel(excel_buf2, index=False)
-            hist_df.to_csv(csv_buf2, index=False)
-            st.download_button("⬇️ Скачать историю (Excel)", data=excel_buf2.getvalue(), file_name="shortio_history.xlsx")
-            st.download_button("⬇️ Скачать историю (CSV)", data=csv_buf2.getvalue(), file_name="shortio_history.csv")
 
-        # ГЕНЕРАТОР СЛАГОВ
-        st.markdown("<h1 style='color:#28EBA4;'>СЛАГИ ДЛЯ ССЫЛОК</h1>", unsafe_allow_html=True)
-        words_raw = st.text_input("2–3 слова через пробел или запятую", key="slug_words", placeholder="")
-        if words_raw:
-            words = [w.lower() for w in re.split(r"[\s,]+", words_raw.strip()) if w]
-            if 2 <= len(words) <= 3:
-                seps = ['-', '_', '.']
-                combos = set()
-                for p in permutations(words):
-                    for sep in seps:
-                        combos.add(sep.join(p))
-                slugs = sorted(combos, key=lambda s: (len(s), s))
-                st.text_area("Варианты слагов", value="\n".join(slugs), height=200)
-            else:
-                st.caption("Введите от 2 до 3 слов.")
+            excel_buf2 = io.BytesIO()
+            hist_df.to_excel(excel_buf2, index=False)
+            st.download_button("⬇️ Скачать историю (Excel)", data=excel_buf2.getvalue(), file_name="shortio_history.xlsx")
 
     # Кнопка «Выйти»
     st.divider()
@@ -385,6 +358,7 @@ if not st.session_state.get("authenticated"):
 
 # Авторизован — рисуем инструменты
 render_tools()
+
 
 
 
