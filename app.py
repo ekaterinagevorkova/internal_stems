@@ -7,7 +7,7 @@ from itertools import product, permutations
 import pandas as pd
 from PIL import Image
 import streamlit as st
-import requests  # === SHORT.IO ===
+import requests
 
 # ───────────────────────── НАСТРОЙКИ СТРАНИЦЫ ─────────────────────────
 st.set_page_config(page_title="Internal tools", layout="wide")
@@ -16,12 +16,21 @@ st.set_page_config(page_title="Internal tools", layout="wide")
 FALLBACK_PASSWORD = "12345"
 PASSWORD = st.secrets.get("password", FALLBACK_PASSWORD)
 
-# === SHORT.IO: дефолты ===
-# СЕКРЕТНЫЙ ключ (sk_), доменный ID и (опционально) строковый домен.
-SHORTIO_API_KEY = st.secrets.get("shortio_api_key", "sk_ROGCu7fwKkYVRz5V")
-SHORTIO_DOMAIN_ID = st.secrets.get("shortio_domain_id", "216771")  # храним строкой, приведём ниже к int
-SHORTIO_DOMAIN = st.secrets.get("shortio_domain", "").strip()      # напр. "s.sports.ru" / "short.sports.ru"
-
+# ───────────────────────── SHORT.IO ПРЕСЕТЫ ───────────────────────────
+# Пользователь выбирает только домен — всё остальное подставляется автоматически.
+SHORTIO_PRESETS = {
+    "sirena.world": {
+        "api_key":   "sk_ROGCu7fwKkYVRz5V",
+        "domain":    "sirena.world",
+        "domain_id": 628828,
+    },
+    "sprts.cc": {
+        "api_key":   "sk_ROGCu7fwKkYVRz5V",
+        "domain":    "sprts.cc",
+        "domain_id": 216771,
+    },
+}
+DEFAULT_DOMAIN = "sprts.cc"  # домен по умолчанию в селекте
 
 # ───────────────────────── СТРАНИЦА ИНСТРУМЕНТОВ ──────────────────────
 def render_tools():
@@ -228,41 +237,38 @@ def render_tools():
         # === SHORT.IO — СОКРАЩЕНИЕ =====================================
         st.markdown("<h1 style='color:#28EBA4;'>SHORT.IO — СОКРАЩЕНИЕ</h1>", unsafe_allow_html=True)
 
-        with st.expander("🔐 Настройки доступа", expanded=False):
-            api_key_input = st.text_input("Short.io Secret API Key", value=SHORTIO_API_KEY, type="password",
-                                          help="Должен начинаться с sk_")
-            domain_id_input = st.text_input("Short.io Domain ID", value=str(SHORTIO_DOMAIN_ID))
-            domain_str_input = st.text_input("Short.io Domain (домен строкой)", value=SHORTIO_DOMAIN,
-                                             placeholder="например: s.sports.ru")
+        # Только один видимый контрол — выбор домена из двух пресетов
+        domain_label_list = list(SHORTIO_PRESETS.keys())
+        default_index = domain_label_list.index(DEFAULT_DOMAIN) if DEFAULT_DOMAIN in domain_label_list else 0
+        selected_domain_label = st.selectbox("Домен Short.io", domain_label_list, index=default_index)
 
-        st.caption("Введите длинную ссылку и (опционально) слаг/заголовок. Если слаг пустой — Short.io сгенерирует его сам.")
+        # Конфиг для выбранного домена
+        active_preset = SHORTIO_PRESETS[selected_domain_label]
+        api_key   = active_preset["api_key"]
+        domain_id = active_preset["domain_id"]
+        domain    = active_preset["domain"]
+
+        st.caption(f"Выбран домен: **{domain}**")
+
+        st.caption("Введите длинную ссылку и (опционально) слаг/заголовок.")
         long_url_shortio = st.text_input("Длинная ссылка для Short.io", key="shortio_long_url")
         custom_path = st.text_input("Кастомный слаг (path), опционально", key="shortio_path", placeholder="naprimer-akciya-001")
         link_title = st.text_input("Заголовок (title), опционально", key="shortio_title")
 
-        # История сессии
         if "shortio_history" not in st.session_state:
             st.session_state.shortio_history = []
 
-        def _coerce_domain_id(domain_id_str: str):
-            try:
-                return int(str(domain_id_str).strip())
-            except Exception:
-                return str(domain_id_str).strip()
-
         def create_short_link(original_url, path=None, title=None, api_key=None, domain_id=None, domain_str=None):
             api_key = (api_key or "").strip()
-            domain_id = _coerce_domain_id(domain_id or "")
             domain_str = (domain_str or "").strip()
 
-            # Предварительные проверки, чтобы не ловить 400
-            if not api_key or not api_key.startswith("sk_"):
+            if not api_key.startswith("sk_"):
                 return {"error": "Нужен Secret API Key (sk_...)."}
 
             if not domain_id:
-                return {"error": "Не задан domainId (например 216771)."}
+                return {"error": "Не задан domainId."}
             if not domain_str:
-                return {"error": "Сервер требует поле 'domain'. Укажите короткий домен строкой (например s.sports.ru)."}
+                return {"error": "Не задан домен строкой (domain)."}
 
             if not (original_url.startswith("http://") or original_url.startswith("https://")):
                 return {"error": "originalURL должен начинаться с http:// или https://."}
@@ -275,7 +281,7 @@ def render_tools():
             payload = {
                 "originalURL": original_url,
                 "domainId": domain_id,
-                "domain": domain_str,          # ← критично: добавляем domain строкой
+                "domain": domain_str,
             }
             if path:
                 payload["path"] = path.strip()
@@ -294,7 +300,6 @@ def render_tools():
             except requests.RequestException as e:
                 return {"error": "Network/Request error", "details": str(e)}
 
-        # Кнопка создания
         if st.button("🔗 Сократить через Short.io"):
             if not long_url_shortio:
                 st.error("Укажите длинную ссылку.")
@@ -303,9 +308,9 @@ def render_tools():
                     original_url=long_url_shortio.strip(),
                     path=custom_path.strip() if custom_path else None,
                     title=link_title.strip() if link_title else None,
-                    api_key=api_key_input,
-                    domain_id=domain_id_input,
-                    domain_str=domain_str_input
+                    api_key=api_key,
+                    domain_id=domain_id,
+                    domain_str=domain
                 )
                 if "error" in result:
                     st.error(f"Ошибка Short.io: {result.get('error')}")
@@ -322,13 +327,12 @@ def render_tools():
                             "Короткая": short_url,
                             "Path": custom_path or result.get("path", ""),
                             "Title": link_title or result.get("title", ""),
-                            "Domain": domain_str_input,
+                            "Domain": domain,
                         })
                     else:
                         st.warning("Запрос успешен, но поле shortURL не найдено. Смотрите RAW JSON.")
                         st.json(result)
 
-        # История
         if st.session_state.shortio_history:
             st.markdown("#### История Short.io (текущая сессия)")
             hist_df = pd.DataFrame(st.session_state.shortio_history)
@@ -360,7 +364,6 @@ def render_tools():
     if st.button("Выйти"):
         st.session_state.clear()
         st.rerun()
-
 
 # ───────────────────────── ЭКРАН ЛОГИНА / РОУТИНГ ─────────────────────
 if not st.session_state.get("authenticated"):
