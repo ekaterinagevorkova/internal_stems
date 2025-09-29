@@ -7,6 +7,25 @@ import pandas as pd
 import re
 from itertools import product, permutations
 
+# "секрет" можно вынести в st.secrets или .env
+PASSWORD = "12345"
+
+# Проверка пароля в сессии
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if not st.session_state["authenticated"]:
+    pwd = st.text_input("Введите пароль:", type="password")
+    if st.button("Войти"):
+        if pwd == PASSWORD:
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Неверный пароль")
+else:
+    st.success("Доступ разрешён ✅")
+    st.write("Здесь уже контент страницы...")
+
 st.set_page_config(page_title="Internal tools", layout="wide")
 st.markdown(
     "<div style='text-align: center; margin-bottom: 20px;'>"
