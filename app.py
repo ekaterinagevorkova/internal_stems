@@ -18,7 +18,6 @@ FALLBACK_PASSWORD = "12345"
 PASSWORD = st.secrets.get("password", FALLBACK_PASSWORD)
 
 # ───────────────────────── SHORT.IO ПРЕСЕТЫ ───────────────────────────
-# Пользователь выбирает домен, а ключ/ID/домен подставляются автоматически
 SHORTIO_PRESETS = {
     "sirena.world": {
         "api_key":   "sk_ROGCu7fwKkYVRz5V",
@@ -85,73 +84,6 @@ def generate_custom_slugs(words_str: str, need: int) -> list[str]:
     combos = sorted(set(combos), key=lambda s: (len(s), s))
     return combos[:need]
 
-def shortio_expand_get_id(domain: str, path: str, api_key: str):
-    """Получить linkId через /links/expand по домену и path."""
-    headers = {"Accept": "application/json", "Authorization": api_key}
-    clean_path = path.strip().strip("/")
-    if not clean_path:
-        return {"error": "empty path"}
-    url = "https://api.short.io/links/expand"
-    params = {"domain": domain, "path": clean_path}
-    try:
-        r = requests.get(url, headers=headers, params=params, timeout=20)
-        data = r.json() if r.headers.get("content-type","").startswith("application/json") else {}
-        if r.status_code >= 400:
-            return {"error": f"HTTP {r.status_code}", "details": data or r.text}
-        link_id = data.get("id") or data.get("_id")
-        if not link_id:
-            return {"error": "link id not found in response", "details": data}
-        return {"id": link_id}
-    except requests.RequestException as e:
-        return {"error": f"network error: {e}"}
-
-def shortio_stats_total_clicks_by_id(link_id: str, api_key: str):
-    """
-    ВСЕГДА возвращаем totalClicks (все клики за всё время).
-    Если поле отсутствует — вернём 0, не подменяя другими метриками.
-    """
-    headers = {"Accept": "application/json", "Authorization": api_key}
-    url = f"https://statistics.short.io/statistics/link/{link_id}"
-    try:
-        r = requests.get(url, headers=headers, timeout=20)
-        data = r.json() if r.headers.get("content-type","").startswith("application/json") else {}
-        if r.status_code >= 400:
-            return {"error": f"HTTP {r.status_code}", "details": data or r.text}
-        # строго totalClicks
-        total = data.get("totalClicks")
-        if total is None:
-            # не подменяем unique/period — возвратим 0, чтобы не путать метрики
-            total = 0
-        return {"totalClicks": int(total)}
-    except requests.RequestException as e:
-        return {"error": f"network error: {e}"}
-
-def shortio_get_link_total_clicks(url_str: str) -> int | str:
-    """
-    Возвращает totalClicks (все клики за всё время) для короткой ссылки:
-    parse → /links/expand → /statistics/link/{id} (totalClicks).
-    """
-    try:
-        parsed = urlparse(url_str)
-        domain = parsed.netloc.lstrip("www.")
-        path = parsed.path
-    except Exception:
-        return "Невалидный URL"
-
-    preset = SHORTIO_PRESETS.get(domain)
-    if not preset:
-        return "Домен не из пресетов"
-
-    expand_res = shortio_expand_get_id(domain, path, preset["api_key"])
-    if "error" in expand_res:
-        return f"expand: {expand_res['error']}"
-    link_id = expand_res["id"]
-
-    stats_res = shortio_stats_total_clicks_by_id(link_id, preset["api_key"])
-    if "error" in stats_res:
-        return f"stats: {stats_res['error']}"
-    return stats_res["totalClicks"]
-
 # ───────────────────────── UI ─────────────────────────────────────────
 def render_tools():
     st.markdown(
@@ -160,14 +92,15 @@ def render_tools():
         "</div>",
         unsafe_allow_html=True
     )
-    col1, col2 = st.columns(2)
 
-    # ─── ЛЕВАЯ КОЛОНКА ──────────────────────────────────────────────────
-    with col1:
+    # ───────────────────────── ВЕРХНЯЯ ЛИНИЯ ───────────────────────────
+    top_left, top_right = st.columns(2)
+
+    with top_left:
         # КОНВЕРТОР (PNG -> WebP)
         st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ (PNG → WebP)</h1>", unsafe_allow_html=True)
-        uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True)
-        archive_name = st.text_input("опционально: название файла", placeholder="converted_images")
+        uploaded_files = st.file_uploader("Загрузите PNG-файлы", type=["png"], accept_multiple_files=True, key="png_uploader")
+        archive_name = st.text_input("опционально: название файла", placeholder="converted_images", key="zip_name")
 
         if uploaded_files:
             converted_files, converted_filenames = [], []
@@ -187,14 +120,95 @@ def render_tools():
             final_name = (archive_name.strip() or "converted_images").replace(" ", "_") + ".zip"
             st.download_button("📦 СКАЧАТЬ АРХИВ", data=zip_buffer.getvalue(), file_name=final_name, mime="application/zip")
 
-        # КОНВЕРТАЦИЯ В HTML (шаблоны — без изменений)
+    with top_right:
+        # КОНВЕРТАЦИЯ В HTML
         st.markdown("<h1 style='color:#28EBA4;'>КОНВЕРТАЦИЯ В HTML</h1>", unsafe_allow_html=True)
         templates = {
-            "FullScreen (320x480)": """<!DOCTYPE html>...""",
-            "Mobile Branding (100%x200px)": """<!DOCTYPE html>...""",
-            "1Right (300x600)": """<!DOCTYPE html>...""",
-            "Desktop Branding (1920x1080)": """<!DOCTYPE html>...""",
-            "Mobile_top (100%x250px)": """<!DOCTYPE html>...""",
+            "FullScreen (320x480)": """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width=320px,height=480px">
+  <meta name="viewport" content="width=320, initial-scale=1.0">
+  <title>AdFox Banner</title>
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/0/52/558ad552e5e0256fae54ff7fc6d8c.css">
+</head>
+<body>
+  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
+    <div class="banner" style="width:100%;height:100%;">
+      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+    </div>
+  </a>
+</body>
+</html>""",
+            "Mobile Branding (100%x200px)": """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width=100%,height=200px">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdFox Banner</title>
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/e/4d/85f288418a95f555eb5035aebed92.css">
+</head>
+<body>
+  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
+    <div class="banner" style="width:100%;height:100%;">
+      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+    </div>
+  </a>
+</body>
+</html>""",
+            "1Right (300x600)": """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width=300px,height=600px">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdFox Banner</title>
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/2/96/4af4f5dcdeb75f36b9197556810c8.css">
+</head>
+<body>
+  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
+    <div class="banner" style="width:100%;height:100%;">
+      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+    </div>
+  </a>
+</body>
+</html>""",
+            "Desktop Branding (1920x1080)": """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width=1920,height=1080">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdFox Banner</title>
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/f/a3/a35026ae42d4e609a322ffb220623.css">
+</head>
+<body>
+  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
+    <div class="banner" style="width:100%;height:100%;">
+      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+    </div>
+  </a>
+</body>
+</html>""",
+            "Mobile_top (100%x250px)": """<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="ad.size" content="width=100%,height=250px">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdFox Banner</title>
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/9/58/782b7c244f327056е145д297c6f4б.css">
+</head>
+<body>
+  <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
+    <div class="banner" style="width:100%;height:100%;">
+      <img src="ССЫЛКА НА ИЗОБРАЖЕНИЕ" alt="баннер" style="width:100%;height:100%;display:block;">
+    </div>
+  </a>
+</body>
+</html>"""
         }
         format_choice = st.selectbox("Выберите формат баннера", list(templates.keys()))
         image_url = st.text_input("Ссылка на визуал")
@@ -203,17 +217,24 @@ def render_tools():
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, "w") as zf:
                 zf.writestr("index.html", html_code)
-            st.download_button("📦 Скачать ZIP с index.html", data=zip_buffer.getvalue(),
-                               file_name=f"{format_choice.replace(' ', '_')}.zip", mime="application/zip")
+            st.download_button(
+                "📦 Скачать ZIP с index.html",
+                data=zip_buffer.getvalue(),
+                file_name=f"{format_choice.replace(' ', '_')}.zip",
+                mime="application/zip"
+            )
 
-    # ─── ПРАВАЯ КОЛОНКА ─────────────────────────────────────────────────
-    with col2:
-        # ======= ГЕНЕРАЦИЯ ССЫЛОК =======
+    st.divider()
+
+    # ───────────────────────── НИЖНЯЯ ЛИНИЯ ────────────────────────────
+    bottom_left, bottom_right = st.columns(2)
+
+    # ======= ЛЕВО: ГЕНЕРАЦИЯ ССЫЛОК =======
+    with bottom_left:
         st.markdown("<h1 style='color:#28EBA4;'>ГЕНЕРАЦИЯ ССЫЛОК</h1>", unsafe_allow_html=True)
 
-        # поля генератора
-        base_url = st.text_input("Основная ссылка")
-        link_type = st.radio("Тип параметров", ["ref", "utm"], horizontal=True)
+        base_url = st.text_input("Основная ссылка", key="gen_base_url")
+        link_type = st.radio("Тип параметров", ["ref", "utm"], horizontal=True, key="gen_type")
 
         def parse_multi(value):
             if not value:
@@ -230,20 +251,18 @@ def render_tools():
             st.markdown("ref-параметры")
             show_ref1 = st.checkbox("ref1", value=True, key="toggle_ref1")
             ref_order = ["ref"] + (["ref1"] if show_ref1 else []) + ["ref2", "ref3", "ref4"]
-            inputs = {name: st.text_input(name) for name in ref_order}
+            inputs = {name: st.text_input(name, key=f"ref_{name}") for name in ref_order}
             if not show_ref1:
-                inputs["ref5"] = st.text_input("ref5")
+                inputs["ref5"] = st.text_input("ref5", key="ref_ref5")
             st.caption("можно вводить неограниченное значение параметров, отделяя через пробел")
             parsed = {k: parse_multi(v) for k, v in inputs.items()}
         else:
             st.markdown("utm-параметры")
             keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
-            parsed = {key: parse_multi(st.text_input(key)) for key in keys}
+            parsed = {key: parse_multi(st.text_input(key, key=f"utm_{key}")) for key in keys}
 
-        # генерация ссылок (Title + исходная ссылка)
-        generated = []  # [{'title': ..., 'url': ...}, ...]
+        generated = []
         varying_key = ""
-
         if base_url:
             lens = {k: len(v) for k, v in parsed.items() if v}
             max_len = max(lens.values()) if lens else 1
@@ -252,6 +271,7 @@ def render_tools():
                     varying_key = k
                     break
 
+            from itertools import product
             combined = list(product(*[parsed[k] if parsed[k] else [""] for k in parsed]))
             keys_list = list(parsed.keys())
 
@@ -261,14 +281,25 @@ def render_tools():
                 title_val = combo[keys_list.index(varying_key)] if varying_key in keys_list else ""
                 generated.append({"title": str(title_val), "url": full_url})
 
-        # вывод генерации: ТАБЛИЦА из двух колонок
+        # сохраняем генерацию в сессию для блока сокращателя
         if generated:
-            df_gen = pd.DataFrame([{"Title": g["title"], "исходная ссылка": g["url"]} for g in generated])
+            st.session_state.generated_links = generated
+        elif "generated_links" not in st.session_state:
+            st.session_state.generated_links = []
+
+        # отображаем таблицу генерации
+        if st.session_state.generated_links:
+            df_gen = pd.DataFrame([{"Title": g["title"], "исходная ссылка": g["url"]} for g in st.session_state.generated_links])
             st.dataframe(df_gen, use_container_width=True)
 
-        st.divider()
+        # выгрузка Excel (CSV — не даём)
+        if st.session_state.generated_links:
+            excel_buf = io.BytesIO()
+            pd.DataFrame([{"Title": g["title"], "исходная ссылка": g["url"]} for g in st.session_state.generated_links]).to_excel(excel_buf, index=False)
+            st.download_button("Скачать Excel сгенерированных ссылок", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
 
-        # ======= СОКРАЩЕНИЕ ССЫЛОК: Short =======
+    # ======= ПРАВО: СОКРАЩЕНИЕ ССЫЛОК: Short =======
+    with bottom_right:
         st.markdown("<h1 style='color:#28EBA4;'>СОКРАЩЕНИЕ ССЫЛОК: Short</h1>", unsafe_allow_html=True)
 
         use_custom_slugs = st.checkbox("Кастомные слаги")
@@ -276,13 +307,12 @@ def render_tools():
         if use_custom_slugs:
             custom_words = st.text_input("2–3 слова (для генерации слагов)")
 
-        # Домен Short.io — внизу блока
+        # домен внизу блока
         domain_label_list = list(SHORTIO_PRESETS.keys())
         default_index = domain_label_list.index(DEFAULT_DOMAIN) if DEFAULT_DOMAIN in domain_label_list else 0
-        selected_domain_label = st.selectbox("Домен Short.io", domain_label_list, index=default_index)
+        selected_domain_label = st.selectbox("Домен Short.io", domain_label_list, index=default_index, key="short_domain")
         active_preset = SHORTIO_PRESETS[selected_domain_label]
 
-        # состояние для ручного режима (без заголовка)
         if "manual_shorten_active" not in st.session_state:
             st.session_state.manual_shorten_active = False
 
@@ -290,11 +320,11 @@ def render_tools():
         st.caption("сократить ref/utm-ссылки ИЛИ ввести новую")
 
         if shorten_clicked:
-            if generated:
-                # сокращаем текущую генерацию
-                slugs = generate_custom_slugs(custom_words, need=len(generated)) if use_custom_slugs else []
+            generated_links = st.session_state.get("generated_links", [])
+            if generated_links:
+                slugs = generate_custom_slugs(custom_words, need=len(generated_links)) if use_custom_slugs else []
                 results = []
-                for idx, g in enumerate(generated):
+                for idx, g in enumerate(generated_links):
                     path = slugs[idx] if idx < len(slugs) else None
                     title = g["title"] or ""
                     res = shortio_create_link(original_url=g["url"], title=title, path=path, preset=active_preset)
@@ -311,10 +341,10 @@ def render_tools():
                         st.session_state.shortio_history = []
                     st.session_state.shortio_history.extend(results)
             else:
-                # ручной режим (без заголовка)
                 st.session_state.manual_shorten_active = True
 
-        if st.session_state.manual_shorten_active and not generated:
+        # ручной режим (когда генерации нет)
+        if st.session_state.manual_shorten_active and not st.session_state.get("generated_links"):
             manual_url = st.text_input("Ссылка", key="manual_url")
             manual_count = st.number_input("Количество", min_value=1, max_value=1000, value=1, step=1, key="manual_count")
 
@@ -352,27 +382,6 @@ def render_tools():
             hist_df.to_excel(excel_buf2, index=False)
             st.download_button("⬇️ Скачать историю (Excel)", data=excel_buf2.getvalue(), file_name="shortio_history.xlsx")
 
-        st.divider()
-
-        # ======= СТАТИСТИКА ССЫЛОК (totalClicks) =======
-        st.markdown("<h1 style='color:#28EBA4;'>СТАТИСТИКА ССЫЛОК</h1>", unsafe_allow_html=True)
-
-        stats_input = st.text_area(
-            "Вставьте короткие ссылки (по одной на строке)",
-            placeholder="https://sprts.cc/abc123\nhttps://sirena.world/test"
-        )
-        if st.button("📊 Получить статистику"):
-            if not stats_input.strip():
-                st.error("Введите хотя бы одну ссылку")
-            else:
-                urls = [u.strip() for u in stats_input.splitlines() if u.strip()]
-                stats_results = []
-                for url in urls:
-                    clicks_total = shortio_get_link_total_clicks(url)  # ВСЕГДА totalClicks
-                    stats_results.append({"ссылка": url, "кол-во переходов Short (total)": clicks_total})
-                if stats_results:
-                    st.dataframe(pd.DataFrame(stats_results), use_container_width=True)
-
     # кнопка «Выйти»
     st.divider()
     if st.button("Выйти"):
@@ -399,6 +408,7 @@ if not st.session_state.get("authenticated"):
 
 # Авторизован — рисуем инструменты
 render_tools()
+
 
 
 
