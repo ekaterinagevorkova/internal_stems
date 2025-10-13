@@ -10,8 +10,6 @@ from PIL import Image
 import streamlit as st
 import requests
 
-import streamlit as st
-
 # 1) Защита от повторного редиректа
 if "redirected_once" not in st.session_state:
     st.session_state.redirected_once = False
