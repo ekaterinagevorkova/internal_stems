@@ -1,4 +1,5 @@
 # app.py
+# app.py
 import streamlit as st
 st.set_page_config(page_title="Internal tools", layout="wide")
 
@@ -14,17 +15,20 @@ if "redirected_once" not in st.session_state:
     st.session_state.redirected_once = False
 
 # Временно выключаем редирект
-should_redirect = False  # ← исправлено
+should_redirect = False
 
 if should_redirect and not st.session_state.redirected_once:
     st.session_state.redirected_once = True
     st.switch_page("pages/login.py")
 
-# Обновление query_params
+# Обновление query_params (без бесконечных перерисовок)
 new_qp = {"tab": "stats"}
-if dict(st.query_params) != new_qp:
-    st.query_params.clear()
-    st.query_params.update(new_qp)
+try:
+    if st.query_params.to_dict() != new_qp:
+        st.query_params.from_dict(new_qp)
+except Exception:
+    pass  # на старых версиях просто не трогаем
+
 
 
 # ───────────────────────── НАСТРОЙКИ СТРАНИЦЫ ─────────────────────────
