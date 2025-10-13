@@ -10,6 +10,24 @@ from PIL import Image
 import streamlit as st
 import requests
 
+import streamlit as st
+
+# 1) Защита от повторного редиректа
+if "redirected_once" not in st.session_state:
+    st.session_state.redirected_once = False
+
+should_redirect = ...  # твоя логика (например, неавторизован)
+if should_redirect and not st.session_state.redirected_once:
+    st.session_state.redirected_once = True
+    st.switch_page("pages/login.py")
+
+# 2) Обновление query_params 
+new_qp = {"tab": "stats"}
+if dict(st.query_params) != new_qp:
+    st.query_params.clear()
+    st.query_params.update(new_qp)
+
+
 # ───────────────────────── НАСТРОЙКИ СТРАНИЦЫ ─────────────────────────
 st.set_page_config(page_title="Internal tools", layout="wide")
 
