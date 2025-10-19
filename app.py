@@ -9,7 +9,7 @@ import pandas as pd
 from PIL import Image
 import requests
 
-# ───────────────────────── НАСТРОЙКИ СТРАНИЦЫ ─────────────────────────
+# ───────────────────────── НАСТРОЙКИ СТРАНИЦЫ ───────────────────────── 
 # ВАЖНО: только один вызов set_page_config за всё приложение
 st.set_page_config(page_title="Internal tools", layout="wide")
 
