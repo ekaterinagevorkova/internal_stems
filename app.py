@@ -1,14 +1,17 @@
 # app.py
-# app.py
-import streamlit as st
-st.set_page_config(page_title="Internal tools", layout="wide")
-
 import io, zipfile, re
 from itertools import product, permutations
 from urllib.parse import urlparse
+from typing import Optional, List, Dict
+
+import streamlit as st
 import pandas as pd
 from PIL import Image
 import requests
+
+# ───────────────────────── НАСТРОЙКИ СТРАНИЦЫ ─────────────────────────
+# ВАЖНО: только один вызов set_page_config за всё приложение
+st.set_page_config(page_title="Internal tools", layout="wide")
 
 # Защита от повторного редиректа
 if "redirected_once" not in st.session_state:
@@ -19,27 +22,27 @@ should_redirect = False
 
 if should_redirect and not st.session_state.redirected_once:
     st.session_state.redirected_once = True
-    st.switch_page("pages/login.py")
+    # st.switch_page есть не во всех версиях — защищаемся
+    try:
+        st.switch_page("pages/login.py")
+    except Exception:
+        st.experimental_rerun()
 
 # Обновление query_params (без бесконечных перерисовок)
 new_qp = {"tab": "stats"}
 try:
+    # API менялся: в новых версиях есть to_dict()/from_dict(), в старых — нет
     if st.query_params.to_dict() != new_qp:
         st.query_params.from_dict(new_qp)
 except Exception:
     pass  # на старых версиях просто не трогаем
-
-
-
-# ───────────────────────── НАСТРОЙКИ СТРАНИЦЫ ─────────────────────────
-st.set_page_config(page_title="Internal tools", layout="wide")
 
 # Пароль
 FALLBACK_PASSWORD = "SportsTeam"
 PASSWORD = st.secrets.get("password", FALLBACK_PASSWORD)
 
 # ───────────────────────── SHORT.IO ПРЕСЕТЫ ───────────────────────────
-SHORTIO_PRESETS = {
+SHORTIO_PRESETS: Dict[str, Dict[str, object]] = {
     "sirena.world": {
         "api_key":   "sk_ROGCu7fwKkYVRz5V",
         "domain":    "sirena.world",
@@ -54,10 +57,15 @@ SHORTIO_PRESETS = {
 DEFAULT_DOMAIN = "sprts.cc"
 
 # ───────────────────────── ВСПОМОГАТЕЛЬНОЕ ────────────────────────────
-def shortio_create_link(original_url: str, title: str | None, path: str | None, preset: dict):
-    api_key   = preset["api_key"].strip()
-    domain_id = preset["domain_id"]
-    domain    = preset["domain"].strip()
+def shortio_create_link(
+    original_url: str,
+    title: Optional[str],
+    path: Optional[str],
+    preset: Dict[str, object],
+):
+    api_key   = str(preset["api_key"]).strip()
+    domain_id = int(preset["domain_id"])
+    domain    = str(preset["domain"]).strip()
 
     if not api_key.startswith("sk_"):
         return {"error": "Нужен Secret API Key (sk_...)."}
@@ -92,7 +100,7 @@ def shortio_create_link(original_url: str, title: str | None, path: str | None, 
     except requests.RequestException as e:
         return {"error": "Network/Request error", "details": str(e)}
 
-def generate_custom_slugs(words_str: str, need: int) -> list[str]:
+def generate_custom_slugs(words_str: str, need: int) -> List[str]:
     """Из 2–3 слов собрать уникальные слаги с разделителями . - _; выдаём до need штук."""
     words = [w.lower() for w in re.split(r"[\s,]+", words_str.strip()) if w]
     if not (2 <= len(words) <= 3):
@@ -129,7 +137,13 @@ def render_tools():
                 image = Image.open(file).convert("RGBA")
                 filename = file.name.rsplit(".", 1)[0]
                 buffer = io.BytesIO()
-                image.save(buffer, format="WEBP", lossless=True)
+                # Если в окружении Pillow без WEBP — тут бы упало.
+                # Streamlit Cloud обычно собирает с WEBP, но на всякий — try/except.
+                try:
+                    image.save(buffer, format="WEBP", lossless=True)
+                except Exception as e:
+                    st.error(f"Не удалось сохранить в WEBP: {e}")
+                    return
                 converted_files.append(buffer.getvalue())
                 converted_filenames.append(filename + ".webp")
 
@@ -220,7 +234,9 @@ def render_tools():
   <meta name="ad.size" content="width=100%,height=250px">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AdFox Banner</title>
-  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/9/58/782b7c244f327056е145д297c6f4б.css">
+  <!-- Обратите внимание: в исходной ссылке есть кириллические символы.
+       Если файл не существует, баннер просто загрузится без стилей. -->
+  <link rel="stylesheet" href="https://dumpster.cdn.sports.ru/9/58/782b7c244f327056е145д297c6ф4б.css">
 </head>
 <body>
   <a href="%banner.reference_mrc_user1%" target="%banner.target%" style="display:block;width:100%;height:100%;text-decoration:none;cursor:pointer;">
@@ -257,7 +273,7 @@ def render_tools():
         base_url = st.text_input("Основная ссылка", key="gen_base_url")
         link_type = st.radio("Тип параметров", ["ref", "utm"], horizontal=True, key="gen_type")
 
-        def parse_multi(value):
+        def parse_multi(value: Optional[str]) -> List[str]:
             if not value:
                 return [""]
             if "," in value:
@@ -292,7 +308,6 @@ def render_tools():
                     varying_key = k
                     break
 
-            from itertools import product
             combined = list(product(*[parsed[k] if parsed[k] else [""] for k in parsed]))
             keys_list = list(parsed.keys())
 
@@ -310,14 +325,26 @@ def render_tools():
 
         # отображаем таблицу генерации
         if st.session_state.generated_links:
-            df_gen = pd.DataFrame([{"Title": g["title"], "исходная ссылка": g["url"]} for g in st.session_state.generated_links])
+            df_gen = pd.DataFrame(
+                [{"Title": g["title"], "исходная ссылка": g["url"]} for g in st.session_state.generated_links]
+            )
             st.dataframe(df_gen, use_container_width=True)
 
-        # выгрузка Excel (CSV — не даём)
+        # выгрузка Excel (фолбэк на CSV при отсутствии движка Excel)
         if st.session_state.generated_links:
-            excel_buf = io.BytesIO()
-            pd.DataFrame([{"Title": g["title"], "исходная ссылка": g["url"]} for g in st.session_state.generated_links]).to_excel(excel_buf, index=False)
-            st.download_button("Скачать Excel сгенерированных ссылок", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
+            try:
+                excel_buf = io.BytesIO()
+                pd.DataFrame(
+                    [{"Title": g["title"], "исходная ссылка": g["url"]} for g in st.session_state.generated_links]
+                ).to_excel(excel_buf, index=False)
+                st.download_button("Скачать Excel сгенерированных ссылок", data=excel_buf.getvalue(), file_name="ссылки.xlsx")
+            except Exception as e:
+                csv_buf = io.StringIO()
+                pd.DataFrame(
+                    [{"Title": g["title"], "исходная ссылка": g["url"]} for g in st.session_state.generated_links]
+                ).to_csv(csv_buf, index=False, encoding="utf-8")
+                st.warning("Не удалось собрать Excel (нужен openpyxl или xlsxwriter). Отдаю CSV.")
+                st.download_button("Скачать CSV сгенерированных ссылок", data=csv_buf.getvalue(), file_name="ссылки.csv")
 
     # ======= ПРАВО: СОКРАЩЕНИЕ ССЫЛОК: Short =======
     with bottom_right:
@@ -394,20 +421,26 @@ def render_tools():
                         st.session_state.shortio_history.extend(results)
                         st.session_state.manual_shorten_active = False
 
-        # История — три колонки, Excel, без CSV
+        # История — три колонки, Excel с фолбэком
         if st.session_state.get("shortio_history"):
             st.markdown("#### История Short.io (текущая сессия)")
             hist_df = pd.DataFrame(st.session_state.shortio_history)[["Title", "исходная ссылка", "сокращенная ссылка"]]
             st.dataframe(hist_df, use_container_width=True)
-            excel_buf2 = io.BytesIO()
-            hist_df.to_excel(excel_buf2, index=False)
-            st.download_button("⬇️ Скачать историю (Excel)", data=excel_buf2.getvalue(), file_name="shortio_history.xlsx")
+            try:
+                excel_buf2 = io.BytesIO()
+                hist_df.to_excel(excel_buf2, index=False)
+                st.download_button("⬇️ Скачать историю (Excel)", data=excel_buf2.getvalue(), file_name="shortio_history.xlsx")
+            except Exception:
+                csv_buf2 = io.StringIO()
+                hist_df.to_csv(csv_buf2, index=False, encoding="utf-8")
+                st.warning("Не удалось собрать Excel (нужен openpyxl или xlsxwriter). Отдаю CSV.")
+                st.download_button("⬇️ Скачать историю (CSV)", data=csv_buf2.getvalue(), file_name="shortio_history.csv")
 
     # кнопка «Выйти»
     st.divider()
     if st.button("Выйти"):
         st.session_state.clear()
-        st.rerun()
+        st.experimental_rerun()
 
 # ───────────────────────── ЭКРАН ЛОГИНА / РОУТИНГ ─────────────────────
 if not st.session_state.get("authenticated"):
@@ -422,15 +455,13 @@ if not st.session_state.get("authenticated"):
     if st.button("Войти"):
         if pwd == PASSWORD:
             st.session_state["authenticated"] = True
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("Неверный пароль")
     st.stop()
 
 # Авторизован — рисуем инструменты
 render_tools()
-
-
 
 
 
